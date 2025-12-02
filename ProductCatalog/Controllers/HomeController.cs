@@ -1,5 +1,6 @@
 ﻿using ProductCatalog.Models;
 using ProductCatalog.ProductServiceReference;
+using ProductCatalog.Services;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -147,6 +148,79 @@ namespace ProductCatalog.Controllers
             Session["Cart"] = new List<CartItem>();
             TempData["SuccessMessage"] = "Your cart has been cleared.";
             return RedirectToAction("Cart");
+        }
+
+        [HttpPost]
+        public ActionResult SubmitOrder()
+        {
+            try
+            {
+                var cart = Session["Cart"] as List<CartItem> ?? new List<CartItem>();
+
+                if (cart == null || !cart.Any())
+                {
+                    TempData["ErrorMessage"] = "Your cart is empty. Please add items before submitting an order.";
+                    return RedirectToAction("Cart");
+                }
+
+                // Calculate order totals
+                var subtotal = cart.Sum(item => item.Subtotal);
+                var tax = subtotal * 0.08m; // 8% tax
+                var shipping = subtotal > 50 ? 0 : 5.99m; // Free shipping over $50
+                var total = subtotal + tax + shipping;
+
+                // Create order
+                var order = new Order
+                {
+                    CustomerSessionId = Session.SessionID,
+                    Subtotal = subtotal,
+                    Tax = tax,
+                    Shipping = shipping,
+                    Total = total
+                };
+
+                // Add order items
+                foreach (var cartItem in cart)
+                {
+                    order.Items.Add(new OrderItem
+                    {
+                        ProductId = cartItem.Product.Id,
+                        ProductName = cartItem.Product.Name,
+                        SKU = cartItem.Product.SKU,
+                        Price = cartItem.Product.Price,
+                        Quantity = cartItem.Quantity,
+                        Subtotal = cartItem.Subtotal
+                    });
+                }
+
+                // Send order to MSMQ
+                var queueService = new OrderQueueService();
+                queueService.SendOrder(order);
+
+                // Clear the cart
+                Session["Cart"] = new List<CartItem>();
+
+                // Redirect to confirmation page
+                TempData["SuccessMessage"] = $"Order {order.OrderId} has been submitted successfully! Total: ${total:N2}";
+                TempData["OrderId"] = order.OrderId;
+                
+                return RedirectToAction("OrderConfirmation");
+            }
+            catch (Exception ex)
+            {
+                TempData["ErrorMessage"] = "Error submitting order: " + ex.Message;
+                return RedirectToAction("Cart");
+            }
+        }
+
+        public ActionResult OrderConfirmation()
+        {
+            if (TempData["OrderId"] == null)
+            {
+                return RedirectToAction("Index");
+            }
+
+            return View();
         }
 
         public ActionResult About()
