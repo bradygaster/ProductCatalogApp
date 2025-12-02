@@ -1,0 +1,323 @@
+@model List<ProductCatalog.Models.CartItem>
+
+@{
+    ViewBag.Title = "Shopping Cart";
+}
+
+<style>
+    .cart-container {
+        margin-top: 20px;
+    }
+
+    .cart-table {
+        background-color: white;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+
+    .cart-table th {
+        background-color: #343a40;
+        color: white;
+        font-weight: 600;
+        vertical-align: middle;
+    }
+
+    .cart-table td {
+        vertical-align: middle;
+    }
+
+    .product-image-small {
+        width: 80px;
+        height: 80px;
+        object-fit: cover;
+        border-radius: 4px;
+    }
+
+    .product-info {
+        display: flex;
+        align-items: center;
+        gap: 15px;
+    }
+
+    .quantity-control {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .quantity-input {
+        width: 70px;
+        text-align: center;
+    }
+
+    .btn-quantity {
+        padding: 0.25rem 0.5rem;
+        font-size: 0.875rem;
+    }
+
+    .cart-summary {
+        background-color: #f8f9fa;
+        padding: 20px;
+        border-radius: 8px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+
+    .summary-row {
+        display: flex;
+        justify-content: space-between;
+        padding: 10px 0;
+        border-bottom: 1px solid #dee2e6;
+    }
+
+    .summary-row.total {
+        font-size: 1.5rem;
+        font-weight: bold;
+        border-bottom: none;
+        padding-top: 15px;
+        color: #28a745;
+    }
+
+    .empty-cart {
+        text-align: center;
+        padding: 60px 20px;
+    }
+
+    .empty-cart-icon {
+        font-size: 64px;
+        color: #6c757d;
+        margin-bottom: 20px;
+    }
+
+    .alert-custom {
+        margin-bottom: 20px;
+    }
+
+    @@media (max-width: 768px) {
+        .cart-table {
+            font-size: 0.875rem;
+        }
+
+        .product-image-small {
+            width: 60px;
+            height: 60px;
+        }
+
+        .quantity-input {
+            width: 60px;
+        }
+    }
+</style>
+
+<div class="container cart-container">
+    <div class="row mb-4">
+        <div class="col-12">
+            <h1 class="display-4">Shopping Cart</h1>
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item">@Html.ActionLink("Home", "Index", "Home")</li>
+                    <li class="breadcrumb-item active" aria-current="page">Cart</li>
+                </ol>
+            </nav>
+        </div>
+    </div>
+
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show alert-custom" role="alert">
+            <strong>Success!</strong> @TempData["SuccessMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    }
+
+    @if (TempData["ErrorMessage"] != null)
+    {
+        <div class="alert alert-danger alert-dismissible fade show alert-custom" role="alert">
+            <strong>Error!</strong> @TempData["ErrorMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    }
+
+    @if (Model != null && Model.Any())
+    {
+        <div class="row">
+            <div class="col-lg-8 mb-4">
+                <div class="table-responsive">
+                    <table class="table cart-table">
+                        <thead>
+                            <tr>
+                                <th>Product</th>
+                                <th>Price</th>
+                                <th>Quantity</th>
+                                <th>Subtotal</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var item in Model)
+                            {
+                                <tr>
+                                    <td>
+                                        <div class="product-info">
+                                            @if (!string.IsNullOrEmpty(item.Product.ImageUrl))
+                                            {
+                                                <img src="@item.Product.ImageUrl" alt="@item.Product.Name" class="product-image-small"
+                                                     onerror="this.style.display='none';" />
+                                            }
+                                            else
+                                            {
+                                                <div style="width: 80px; height: 80px; background-color: #f8f9fa; display: flex; align-items: center; justify-content: center; border-radius: 4px;">
+                                                    <span style="font-size: 10px; color: #6c757d;">No Image</span>
+                                                </div>
+                                            }
+                                            <div>
+                                                <strong>@item.Product.Name</strong><br />
+                                                <small class="text-muted">@item.Product.Category</small><br />
+                                                <small class="text-muted">SKU: @item.Product.SKU</small>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td class="align-middle">
+                                        <strong>$@item.Product.Price.ToString("N2")</strong>
+                                    </td>
+                                    <td class="align-middle">
+                                        <div class="quantity-control">
+                                            <form action="@Url.Action("UpdateQuantity", "Home")" method="post" style="display: inline;">
+                                                <input type="hidden" name="productId" value="@item.Product.Id" />
+                                                <input type="hidden" name="quantity" value="@(item.Quantity - 1)" />
+                                                <button type="submit" class="btn btn-sm btn-outline-secondary btn-quantity" @(item.Quantity <= 1 ? "disabled" : "")>
+                                                    <strong>-</strong>
+                                                </button>
+                                            </form>
+                                            <input type="number" value="@item.Quantity" min="1" max="@item.Product.StockQuantity"
+                                                   class="form-control quantity-input" readonly />
+                                            <form action="@Url.Action("UpdateQuantity", "Home")" method="post" style="display: inline;">
+                                                <input type="hidden" name="productId" value="@item.Product.Id" />
+                                                <input type="hidden" name="quantity" value="@(item.Quantity + 1)" />
+                                                <button type="submit" class="btn btn-sm btn-outline-secondary btn-quantity"
+                                                        @(item.Quantity >= item.Product.StockQuantity ? "disabled" : "")>
+                                                    <strong>+</strong>
+                                                </button>
+                                            </form>
+                                        </div>
+                                        <small class="text-muted d-block mt-1 text-center">Max: @item.Product.StockQuantity</small>
+                                    </td>
+                                    <td class="align-middle">
+                                        <strong class="text-success">$@item.Subtotal.ToString("N2")</strong>
+                                    </td>
+                                    <td class="align-middle">
+                                        @using (Html.BeginForm("RemoveFromCart", "Home", FormMethod.Post))
+                                        {
+                                            <input type="hidden" name="productId" value="@item.Product.Id" />
+                                            <button type="submit" class="btn btn-sm btn-danger" onclick="return confirm('Are you sure you want to remove this item?');">
+                                                <i class="bi bi-trash"></i> Remove
+                                            </button>
+                                        }
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="mt-3">
+                    @using (Html.BeginForm("ClearCart", "Home", FormMethod.Post, new { @class = "d-inline" }))
+                    {
+                        <button type="submit" class="btn btn-outline-danger" onclick="return confirm('Are you sure you want to clear your entire cart?');">
+                            <i class="bi bi-trash"></i> Clear Cart
+                        </button>
+                    }
+                    @Html.ActionLink("Continue Shopping", "Index", "Home", null, new { @class = "btn btn-outline-primary" })
+                </div>
+            </div>
+
+            <div class="col-lg-4">
+                <div class="cart-summary">
+                    <h4 class="mb-3">Order Summary</h4>
+
+                    @{
+                        var subtotal = Model.Sum(item => item.Subtotal);
+                        var tax = subtotal * 0.08m; // 8% tax
+                        var shipping = subtotal > 50 ? 0 : 5.99m; // Free shipping over $50
+                        var total = subtotal + tax + shipping;
+                    }
+
+                    <div class="summary-row">
+                        <span>Subtotal (@Model.Sum(i => i.Quantity) items):</span>
+                        <span>$@subtotal.ToString("N2")</span>
+                    </div>
+
+                    <div class="summary-row">
+                        <span>Tax (8%):</span>
+                        <span>$@tax.ToString("N2")</span>
+                    </div>
+
+                    <div class="summary-row">
+                        <span>Shipping:</span>
+                        <span>
+                            @if (shipping == 0)
+                            {
+                                <span class="text-success"><strong>FREE</strong></span>
+                            }
+                            else
+                            {
+                                <span>$@shipping.ToString("N2")</span>
+                            }
+                        </span>
+                    </div>
+
+                    @if (subtotal < 50 && subtotal > 0)
+                    {
+                        <div class="alert alert-info mt-2 mb-2" role="alert">
+                            <small>Add $@((50 - subtotal).ToString("N2")) more for FREE shipping!</small>
+                        </div>
+                    }
+
+                    <div class="summary-row total">
+                        <span>Total:</span>
+                        <span>$@total.ToString("N2")</span>
+                    </div>
+
+                    <div class="d-grid gap-2 mt-4">
+                        <button type="button" class="btn btn-success btn-lg" onclick="alert('Checkout functionality coming soon!');">
+                            <i class="bi bi-credit-card"></i> Proceed to Checkout
+                        </button>
+                    </div>
+
+                    <div class="mt-3 text-center">
+                        <small class="text-muted">
+                            <i class="bi bi-shield-check"></i> Secure checkout<br />
+                            <i class="bi bi-truck"></i> Fast delivery
+                        </small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+    else
+    {
+        <div class="row">
+            <div class="col-12">
+                <div class="empty-cart">
+                    <div class="empty-cart-icon">
+                        <i class="bi bi-cart-x"></i>
+                    </div>
+                    <h2>Your cart is empty</h2>
+                    <p class="lead text-muted">Looks like you haven't added any items to your cart yet.</p>
+                    <div class="mt-4">
+                        @Html.ActionLink("Start Shopping", "Index", "Home", null, new { @class = "btn btn-primary btn-lg" })
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+</div>
+
+@section scripts {
+    <script>
+        // Auto-dismiss alerts after 5 seconds
+        window.setTimeout(function () {
+            $(".alert-custom").fadeTo(500, 0).slideUp(500, function () {
+                $(this).remove();
+            });
+        }, 5000);
+    </script>
+}
