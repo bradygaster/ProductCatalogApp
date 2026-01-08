@@ -289,4 +289,11 @@
     </PropertyGroup>
     <Error Condition="!Exists('..\packages\Microsoft.CodeDom.Providers.DotNetCompilerPlatform.2.0.1\build\net46\Microsoft.CodeDom.Providers.DotNetCompilerPlatform.props')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\Microsoft.CodeDom.Providers.DotNetCompilerPlatform.2.0.1\build\net46\Microsoft.CodeDom.Providers.DotNetCompilerPlatform.props'))" />
   </Target>
+  <Target Name="CopyRoslynFiles" AfterTargets="AfterBuild">
+    <ItemGroup>
+      <RoslynFiles Include="..\packages\Microsoft.CodeDom.Providers.DotNetCompilerPlatform.2.0.1\tools\RoslynLatest\**\*.*" />
+    </ItemGroup>
+    <MakeDir Directories="$(OutputPath)roslyn" />
+    <Copy SourceFiles="@(RoslynFiles)" DestinationFolder="$(OutputPath)roslyn\%(RecursiveDir)" SkipUnchangedFiles="true" />
+  </Target>
 </Project>
