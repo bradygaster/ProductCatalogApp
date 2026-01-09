@@ -1,8 +1,8 @@
 {
   "version": "1.0",
-  "generated_at": "2026-01-09T10:54:36.655452",
-  "repository": "unknown",
-  "complexity_score": 0,
+  "generated_at": "2026-01-09T10:59:35.094057",
+  "repository": "ProductCatalogApp",
+  "complexity_score": 3,
   "total_tasks": 8,
   "estimated_hours": 3.9166666666666665,
   "tasks": [
@@ -31,7 +31,7 @@
       "estimated_minutes": 15,
       "agent_hint": "",
       "started_at": null,
-      "completed_at": "2026-01-09T10:54:36.655367",
+      "completed_at": "2026-01-09T10:59:35.093968",
       "result": null,
       "branch": null,
       "pr_url": null

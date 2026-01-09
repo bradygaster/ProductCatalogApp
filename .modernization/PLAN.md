@@ -1,8 +1,8 @@
 # Migration Plan
 
-**Repository:** unknown  
-**Generated:** 2026-01-09T10:54:36.655452  
-**Complexity Score:** 0/10  
+**Repository:** ProductCatalogApp  
+**Generated:** 2026-01-09T10:59:35.094057  
+**Complexity Score:** 3/10  
 
 ## Summary
 
