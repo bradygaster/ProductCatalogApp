@@ -1,10 +1,10 @@
 {
   "version": "1.0",
-  "generated_at": "2026-01-09T10:59:35.094057",
+  "generated_at": "2026-01-09T11:01:15.010276",
   "repository": "ProductCatalogApp",
   "complexity_score": 3,
-  "total_tasks": 8,
-  "estimated_hours": 3.9166666666666665,
+  "total_tasks": 10,
+  "estimated_hours": 5.916666666666667,
   "tasks": [
     {
       "id": "assess-001",
@@ -31,17 +31,94 @@
       "estimated_minutes": 15,
       "agent_hint": "",
       "started_at": null,
-      "completed_at": "2026-01-09T10:59:35.093968",
+      "completed_at": "2026-01-09T11:01:15.010192",
       "result": null,
       "branch": null,
       "pr_url": null
     },
     {
-      "id": "transform-001-config",
+      "id": "transform-001-api",
+      "title": "Create ASP.NET Core API project",
+      "description": "Create new ASP.NET Core project to replace WCF services",
+      "phase": "transform",
+      "order": 1,
+      "status": "pending",
+      "instructions": [
+        "Create new Web API project: dotnet new webapi -n <ServiceName>.Api",
+        "Add project to solution",
+        "Configure Program.cs with required services",
+        "Set up controller scaffolding",
+        "Add health check endpoint"
+      ],
+      "acceptance_criteria": [
+        "New API project created and added to solution",
+        "Project targets net8.0",
+        "Swagger/OpenAPI configured",
+        "Health check endpoint responds"
+      ],
+      "files_to_modify": [],
+      "files_to_create": [
+        "src/<ServiceName>.Api/<ServiceName>.Api.csproj",
+        "src/<ServiceName>.Api/Program.cs",
+        "src/<ServiceName>.Api/Controllers/"
+      ],
+      "depends_on": [],
+      "blocks": [
+        "transform-002-wcf-migrate"
+      ],
+      "estimated_minutes": 30,
+      "agent_hint": "Good for coding agents - scaffolding task",
+      "started_at": null,
+      "completed_at": null,
+      "result": null,
+      "branch": null,
+      "pr_url": null
+    },
+    {
+      "id": "transform-002-wcf-migrate",
+      "title": "Migrate WCF contracts to API controllers",
+      "description": "Convert WCF ServiceContracts to ASP.NET Core controllers",
+      "phase": "transform",
+      "order": 2,
+      "status": "pending",
+      "instructions": [
+        "For each [ServiceContract] interface:",
+        "  1. Create corresponding Controller class",
+        "  2. Map [OperationContract] methods to HTTP actions",
+        "  3. Convert data contracts to DTOs",
+        "  4. Implement controller actions calling existing business logic",
+        "Preserve existing business logic in service layer",
+        "Add input validation",
+        "Add proper error handling and HTTP status codes"
+      ],
+      "acceptance_criteria": [
+        "All WCF operations have corresponding API endpoints",
+        "API contracts documented in OpenAPI spec",
+        "Error handling returns appropriate HTTP status codes",
+        "Integration tests pass"
+      ],
+      "files_to_modify": [
+        "src/<ServiceName>.Api/Controllers/*.cs"
+      ],
+      "files_to_create": [],
+      "depends_on": [
+        "transform-001-api"
+      ],
+      "blocks": [],
+      "estimated_minutes": 90,
+      "agent_hint": "Complex task - may need multiple iterations",
+      "started_at": null,
+      "completed_at": null,
+      "result": null,
+      "branch": null,
+      "pr_url": null
+    },
+    {
+      "id": "transform-003-config",
       "title": "Migrate configuration to appsettings.json",
       "description": "Move configuration from web.config/app.config to appsettings.json",
       "phase": "transform",
-      "order": 1,
+      "order": 3,
       "status": "pending",
       "instructions": [
         "Create appsettings.json with appropriate structure",
@@ -75,11 +152,11 @@
       "pr_url": null
     },
     {
-      "id": "transform-002-docker",
+      "id": "transform-004-docker",
       "title": "Add Dockerfile for containerization",
       "description": "Create Dockerfile for each deployable project",
       "phase": "transform",
-      "order": 2,
+      "order": 4,
       "status": "pending",
       "instructions": [
         "Create Dockerfile using multi-stage build",
@@ -112,11 +189,11 @@
       "pr_url": null
     },
     {
-      "id": "validate-003-build",
+      "id": "validate-005-build",
       "title": "Verify solution builds",
       "description": "Ensure entire solution builds without errors",
       "phase": "validate",
-      "order": 3,
+      "order": 5,
       "status": "pending",
       "instructions": [
         "Run 'dotnet build' on solution",
@@ -133,7 +210,7 @@
       "files_to_create": [],
       "depends_on": [],
       "blocks": [
-        "validate-004-tests"
+        "validate-006-tests"
       ],
       "estimated_minutes": 15,
       "agent_hint": "Automated validation",
@@ -144,11 +221,11 @@
       "pr_url": null
     },
     {
-      "id": "validate-004-tests",
+      "id": "validate-006-tests",
       "title": "Run all tests",
       "description": "Execute unit and integration tests",
       "phase": "validate",
-      "order": 4,
+      "order": 6,
       "status": "pending",
       "instructions": [
         "Run 'dotnet test' on solution",
@@ -164,7 +241,7 @@
       "files_to_modify": [],
       "files_to_create": [],
       "depends_on": [
-        "validate-003-build"
+        "validate-005-build"
       ],
       "blocks": [],
       "estimated_minutes": 20,
@@ -176,11 +253,11 @@
       "pr_url": null
     },
     {
-      "id": "validate-005-security",
+      "id": "validate-007-security",
       "title": "Security scan",
       "description": "Run security analysis on codebase",
       "phase": "validate",
-      "order": 5,
+      "order": 7,
       "status": "pending",
       "instructions": [
         "Run 'dotnet list package --vulnerable'",
@@ -206,11 +283,11 @@
       "pr_url": null
     },
     {
-      "id": "deploy-006-iac",
+      "id": "deploy-008-iac",
       "title": "Generate Infrastructure as Code",
       "description": "Create Bicep templates for Azure deployment",
       "phase": "deploy",
-      "order": 6,
+      "order": 8,
       "status": "pending",
       "instructions": [
         "Create main.bicep with resource definitions",
@@ -242,11 +319,11 @@
       "pr_url": null
     },
     {
-      "id": "deploy-007-pipeline",
+      "id": "deploy-009-pipeline",
       "title": "Create CI/CD pipeline",
       "description": "Set up GitHub Actions or Azure DevOps pipeline",
       "phase": "deploy",
-      "order": 7,
+      "order": 9,
       "status": "pending",
       "instructions": [
         "Create workflow file for CI (build + test)",
