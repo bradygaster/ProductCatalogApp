@@ -1,10 +1,10 @@
 {
   "version": "1.0",
-  "generated_at": "2026-01-09T11:01:15.010276",
+  "generated_at": "2026-01-09T11:03:51.860737",
   "repository": "ProductCatalogApp",
   "complexity_score": 3,
-  "total_tasks": 10,
-  "estimated_hours": 5.916666666666667,
+  "total_tasks": 11,
+  "estimated_hours": 6.666666666666667,
   "tasks": [
     {
       "id": "assess-001",
@@ -31,17 +31,69 @@
       "estimated_minutes": 15,
       "agent_hint": "",
       "started_at": null,
-      "completed_at": "2026-01-09T11:01:15.010192",
+      "completed_at": "2026-01-09T11:03:51.860671",
       "result": null,
       "branch": null,
       "pr_url": null
     },
     {
-      "id": "transform-001-api",
+      "id": "transform-001-upgrade",
+      "title": "Upgrade to .NET 10",
+      "description": "Upgrade all projects to .NET 10 LTS",
+      "phase": "transform",
+      "order": 1,
+      "status": "pending",
+      "instructions": [
+        "For each project file (.csproj):",
+        "  1. Update <TargetFramework> to net10.0",
+        "  2. Remove any <RuntimeIdentifier> if not needed",
+        "  3. Update <LangVersion> to latest (or remove for default)",
+        "",
+        "Update NuGet packages to .NET 10 compatible versions:",
+        "  - Run 'dotnet outdated' to identify updates",
+        "  - Update Microsoft.* packages to 10.x versions",
+        "  - Update third-party packages to compatible versions",
+        "",
+        "Handle breaking changes:",
+        "  - Review https://learn.microsoft.com/dotnet/core/compatibility/10.0",
+        "  - Fix any nullable reference type warnings",
+        "  - Update deprecated API calls",
+        "",
+        "Verify upgrade:",
+        "  - Run 'dotnet build' to check for errors",
+        "  - Run 'dotnet test' to verify functionality",
+        "",
+        "Projects to upgrade:",
+        "  - All projects in solution"
+      ],
+      "acceptance_criteria": [
+        "All projects target net10.0",
+        "No packages.config files (use PackageReference)",
+        "All NuGet packages updated to compatible versions",
+        "Solution builds without errors",
+        "All tests pass",
+        "No obsolete API warnings (or documented exceptions)"
+      ],
+      "files_to_modify": [
+        "**/*.csproj"
+      ],
+      "files_to_create": [],
+      "depends_on": [],
+      "blocks": [],
+      "estimated_minutes": 45,
+      "agent_hint": "Good for coding agents - systematic file updates",
+      "started_at": null,
+      "completed_at": null,
+      "result": null,
+      "branch": null,
+      "pr_url": null
+    },
+    {
+      "id": "transform-002-api",
       "title": "Create ASP.NET Core API project",
       "description": "Create new ASP.NET Core project to replace WCF services",
       "phase": "transform",
-      "order": 1,
+      "order": 2,
       "status": "pending",
       "instructions": [
         "Create new Web API project: dotnet new webapi -n <ServiceName>.Api",
@@ -64,7 +116,7 @@
       ],
       "depends_on": [],
       "blocks": [
-        "transform-002-wcf-migrate"
+        "transform-003-wcf-migrate"
       ],
       "estimated_minutes": 30,
       "agent_hint": "Good for coding agents - scaffolding task",
@@ -75,11 +127,11 @@
       "pr_url": null
     },
     {
-      "id": "transform-002-wcf-migrate",
+      "id": "transform-003-wcf-migrate",
       "title": "Migrate WCF contracts to API controllers",
       "description": "Convert WCF ServiceContracts to ASP.NET Core controllers",
       "phase": "transform",
-      "order": 2,
+      "order": 3,
       "status": "pending",
       "instructions": [
         "For each [ServiceContract] interface:",
@@ -102,7 +154,7 @@
       ],
       "files_to_create": [],
       "depends_on": [
-        "transform-001-api"
+        "transform-002-api"
       ],
       "blocks": [],
       "estimated_minutes": 90,
@@ -114,11 +166,11 @@
       "pr_url": null
     },
     {
-      "id": "transform-003-config",
+      "id": "transform-004-config",
       "title": "Migrate configuration to appsettings.json",
       "description": "Move configuration from web.config/app.config to appsettings.json",
       "phase": "transform",
-      "order": 3,
+      "order": 4,
       "status": "pending",
       "instructions": [
         "Create appsettings.json with appropriate structure",
@@ -152,11 +204,11 @@
       "pr_url": null
     },
     {
-      "id": "transform-004-docker",
+      "id": "transform-005-docker",
       "title": "Add Dockerfile for containerization",
       "description": "Create Dockerfile for each deployable project",
       "phase": "transform",
-      "order": 4,
+      "order": 5,
       "status": "pending",
       "instructions": [
         "Create Dockerfile using multi-stage build",
@@ -189,11 +241,11 @@
       "pr_url": null
     },
     {
-      "id": "validate-005-build",
+      "id": "validate-006-build",
       "title": "Verify solution builds",
       "description": "Ensure entire solution builds without errors",
       "phase": "validate",
-      "order": 5,
+      "order": 6,
       "status": "pending",
       "instructions": [
         "Run 'dotnet build' on solution",
@@ -210,7 +262,7 @@
       "files_to_create": [],
       "depends_on": [],
       "blocks": [
-        "validate-006-tests"
+        "validate-007-tests"
       ],
       "estimated_minutes": 15,
       "agent_hint": "Automated validation",
@@ -221,11 +273,11 @@
       "pr_url": null
     },
     {
-      "id": "validate-006-tests",
+      "id": "validate-007-tests",
       "title": "Run all tests",
       "description": "Execute unit and integration tests",
       "phase": "validate",
-      "order": 6,
+      "order": 7,
       "status": "pending",
       "instructions": [
         "Run 'dotnet test' on solution",
@@ -241,7 +293,7 @@
       "files_to_modify": [],
       "files_to_create": [],
       "depends_on": [
-        "validate-005-build"
+        "validate-006-build"
       ],
       "blocks": [],
       "estimated_minutes": 20,
@@ -253,11 +305,11 @@
       "pr_url": null
     },
     {
-      "id": "validate-007-security",
+      "id": "validate-008-security",
       "title": "Security scan",
       "description": "Run security analysis on codebase",
       "phase": "validate",
-      "order": 7,
+      "order": 8,
       "status": "pending",
       "instructions": [
         "Run 'dotnet list package --vulnerable'",
@@ -283,11 +335,11 @@
       "pr_url": null
     },
     {
-      "id": "deploy-008-iac",
+      "id": "deploy-009-iac",
       "title": "Generate Infrastructure as Code",
       "description": "Create Bicep templates for Azure deployment",
       "phase": "deploy",
-      "order": 8,
+      "order": 9,
       "status": "pending",
       "instructions": [
         "Create main.bicep with resource definitions",
@@ -319,11 +371,11 @@
       "pr_url": null
     },
     {
-      "id": "deploy-009-pipeline",
+      "id": "deploy-010-pipeline",
       "title": "Create CI/CD pipeline",
       "description": "Set up GitHub Actions or Azure DevOps pipeline",
       "phase": "deploy",
-      "order": 9,
+      "order": 10,
       "status": "pending",
       "instructions": [
         "Create workflow file for CI (build + test)",

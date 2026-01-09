@@ -1,13 +1,13 @@
 # Migration Plan
 
 **Repository:** ProductCatalogApp  
-**Generated:** 2026-01-09T11:01:15.010276  
+**Generated:** 2026-01-09T11:03:51.860737  
 **Complexity Score:** 3/10  
 
 ## Summary
 
-- **Total Tasks:** 10
-- **Estimated Effort:** 5.9 hours
+- **Total Tasks:** 11
+- **Estimated Effort:** 6.7 hours
 - **Planned Phases:** assess, transform, validate, deploy
 
 ## Task Overview
@@ -22,27 +22,33 @@
 - Files to Create: None
 
 
-### TRANSFORM Phase (4 tasks)
+### TRANSFORM Phase (5 tasks)
 
-**Task 1: Create ASP.NET Core API project**
+**Task 1: Upgrade to .NET 10**
+- Description: Upgrade all projects to .NET 10 LTS
+- Estimated Time: 45 minutes
+- Files to Modify: **/*.csproj
+- Files to Create: None
+
+**Task 2: Create ASP.NET Core API project**
 - Description: Create new ASP.NET Core project to replace WCF services
 - Estimated Time: 30 minutes
 - Files to Modify: None
 - Files to Create: src/<ServiceName>.Api/<ServiceName>.Api.csproj, src/<ServiceName>.Api/Program.cs, src/<ServiceName>.Api/Controllers/
 
-**Task 2: Migrate WCF contracts to API controllers**
+**Task 3: Migrate WCF contracts to API controllers**
 - Description: Convert WCF ServiceContracts to ASP.NET Core controllers
 - Estimated Time: 90 minutes
 - Files to Modify: src/<ServiceName>.Api/Controllers/*.cs
 - Files to Create: None
 
-**Task 3: Migrate configuration to appsettings.json**
+**Task 4: Migrate configuration to appsettings.json**
 - Description: Move configuration from web.config/app.config to appsettings.json
 - Estimated Time: 30 minutes
 - Files to Modify: None
 - Files to Create: src/**/appsettings.json, src/**/appsettings.Development.json
 
-**Task 4: Add Dockerfile for containerization**
+**Task 5: Add Dockerfile for containerization**
 - Description: Create Dockerfile for each deployable project
 - Estimated Time: 30 minutes
 - Files to Modify: None
