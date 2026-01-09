@@ -1,0 +1,280 @@
+{
+  "version": "1.0",
+  "generated_at": "2026-01-09T10:44:32.349036",
+  "repository": "unknown",
+  "complexity_score": 0,
+  "total_tasks": 8,
+  "estimated_hours": 3.9166666666666665,
+  "tasks": [
+    {
+      "id": "assess-001",
+      "title": "Initial Assessment",
+      "description": "Analyze repository for legacy patterns and modernization opportunities",
+      "phase": "assess",
+      "order": 0,
+      "status": "completed",
+      "instructions": [
+        "Run static analysis on solution files",
+        "Detect legacy patterns (WCF, Windows Service, WebForms, etc.)",
+        "Calculate complexity score",
+        "Generate assessment report"
+      ],
+      "acceptance_criteria": [
+        "Assessment report generated in .modernization/ASSESSMENT.md",
+        "All projects analyzed",
+        "Legacy patterns documented"
+      ],
+      "files_to_modify": [],
+      "files_to_create": [],
+      "depends_on": [],
+      "blocks": [],
+      "estimated_minutes": 15,
+      "agent_hint": "",
+      "started_at": null,
+      "completed_at": "2026-01-09T10:44:32.348986",
+      "result": null,
+      "branch": null,
+      "pr_url": null
+    },
+    {
+      "id": "transform-001-config",
+      "title": "Migrate configuration to appsettings.json",
+      "description": "Move configuration from web.config/app.config to appsettings.json",
+      "phase": "transform",
+      "order": 1,
+      "status": "pending",
+      "instructions": [
+        "Create appsettings.json with appropriate structure",
+        "Create appsettings.Development.json for local settings",
+        "Migrate appSettings section",
+        "Migrate connectionStrings section",
+        "Create strongly-typed options classes",
+        "Register options in DI container",
+        "Update code to use IOptions<T> pattern",
+        "Move secrets to user-secrets for development"
+      ],
+      "acceptance_criteria": [
+        "All configuration migrated to appsettings.json",
+        "Strongly-typed options classes created",
+        "No hardcoded configuration values",
+        "Application starts with new configuration"
+      ],
+      "files_to_modify": [],
+      "files_to_create": [
+        "src/**/appsettings.json",
+        "src/**/appsettings.Development.json"
+      ],
+      "depends_on": [],
+      "blocks": [],
+      "estimated_minutes": 30,
+      "agent_hint": "Good for coding agents - mostly mechanical",
+      "started_at": null,
+      "completed_at": null,
+      "result": null,
+      "branch": null,
+      "pr_url": null
+    },
+    {
+      "id": "transform-002-docker",
+      "title": "Add Dockerfile for containerization",
+      "description": "Create Dockerfile for each deployable project",
+      "phase": "transform",
+      "order": 2,
+      "status": "pending",
+      "instructions": [
+        "Create Dockerfile using multi-stage build",
+        "Use mcr.microsoft.com/dotnet/sdk:8.0 for build stage",
+        "Use mcr.microsoft.com/dotnet/aspnet:8.0 or runtime:8.0 for final",
+        "Add .dockerignore file",
+        "Test local container build",
+        "Add docker-compose.yml for local development"
+      ],
+      "acceptance_criteria": [
+        "Dockerfile builds successfully",
+        "Container runs and responds to health checks",
+        "Image size is optimized",
+        "docker-compose up works for local dev"
+      ],
+      "files_to_modify": [],
+      "files_to_create": [
+        "src/**/Dockerfile",
+        ".dockerignore",
+        "docker-compose.yml"
+      ],
+      "depends_on": [],
+      "blocks": [],
+      "estimated_minutes": 30,
+      "agent_hint": "Good for coding agents",
+      "started_at": null,
+      "completed_at": null,
+      "result": null,
+      "branch": null,
+      "pr_url": null
+    },
+    {
+      "id": "validate-003-build",
+      "title": "Verify solution builds",
+      "description": "Ensure entire solution builds without errors",
+      "phase": "validate",
+      "order": 3,
+      "status": "pending",
+      "instructions": [
+        "Run 'dotnet build' on solution",
+        "Fix any build errors",
+        "Address build warnings",
+        "Verify all projects compile"
+      ],
+      "acceptance_criteria": [
+        "Solution builds with no errors",
+        "No critical warnings",
+        "All projects included in build"
+      ],
+      "files_to_modify": [],
+      "files_to_create": [],
+      "depends_on": [],
+      "blocks": [
+        "validate-004-tests"
+      ],
+      "estimated_minutes": 15,
+      "agent_hint": "Automated validation",
+      "started_at": null,
+      "completed_at": null,
+      "result": null,
+      "branch": null,
+      "pr_url": null
+    },
+    {
+      "id": "validate-004-tests",
+      "title": "Run all tests",
+      "description": "Execute unit and integration tests",
+      "phase": "validate",
+      "order": 4,
+      "status": "pending",
+      "instructions": [
+        "Run 'dotnet test' on solution",
+        "Review test results",
+        "Fix any failing tests",
+        "Ensure adequate coverage"
+      ],
+      "acceptance_criteria": [
+        "All unit tests pass",
+        "All integration tests pass",
+        "Code coverage meets minimum threshold"
+      ],
+      "files_to_modify": [],
+      "files_to_create": [],
+      "depends_on": [
+        "validate-003-build"
+      ],
+      "blocks": [],
+      "estimated_minutes": 20,
+      "agent_hint": "Automated validation",
+      "started_at": null,
+      "completed_at": null,
+      "result": null,
+      "branch": null,
+      "pr_url": null
+    },
+    {
+      "id": "validate-005-security",
+      "title": "Security scan",
+      "description": "Run security analysis on codebase",
+      "phase": "validate",
+      "order": 5,
+      "status": "pending",
+      "instructions": [
+        "Run 'dotnet list package --vulnerable'",
+        "Update any vulnerable packages",
+        "Run static security analysis",
+        "Review findings and remediate"
+      ],
+      "acceptance_criteria": [
+        "No known vulnerable packages",
+        "No critical security findings",
+        "Secrets not committed to repo"
+      ],
+      "files_to_modify": [],
+      "files_to_create": [],
+      "depends_on": [],
+      "blocks": [],
+      "estimated_minutes": 20,
+      "agent_hint": "Automated validation with human review",
+      "started_at": null,
+      "completed_at": null,
+      "result": null,
+      "branch": null,
+      "pr_url": null
+    },
+    {
+      "id": "deploy-006-iac",
+      "title": "Generate Infrastructure as Code",
+      "description": "Create Bicep templates for Azure deployment",
+      "phase": "deploy",
+      "order": 6,
+      "status": "pending",
+      "instructions": [
+        "Create main.bicep with resource definitions",
+        "Create module files for each resource type",
+        "Add parameter files for each environment",
+        "Validate templates with 'az bicep build'",
+        "Test with what-if deployment"
+      ],
+      "acceptance_criteria": [
+        "Bicep templates valid",
+        "All required resources defined",
+        "Environment-specific parameters separated",
+        "What-if shows expected changes"
+      ],
+      "files_to_modify": [],
+      "files_to_create": [
+        "infrastructure/main.bicep",
+        "infrastructure/modules/*.bicep",
+        "infrastructure/parameters/*.json"
+      ],
+      "depends_on": [],
+      "blocks": [],
+      "estimated_minutes": 45,
+      "agent_hint": "Good for coding agents with IaC knowledge",
+      "started_at": null,
+      "completed_at": null,
+      "result": null,
+      "branch": null,
+      "pr_url": null
+    },
+    {
+      "id": "deploy-007-pipeline",
+      "title": "Create CI/CD pipeline",
+      "description": "Set up GitHub Actions or Azure DevOps pipeline",
+      "phase": "deploy",
+      "order": 7,
+      "status": "pending",
+      "instructions": [
+        "Create workflow file for CI (build + test)",
+        "Create workflow file for CD (deploy to Azure)",
+        "Configure environment secrets",
+        "Add deployment gates/approvals",
+        "Test pipeline execution"
+      ],
+      "acceptance_criteria": [
+        "CI pipeline runs on PR",
+        "CD pipeline deploys to dev on merge",
+        "Staging/prod require approval",
+        "Rollback process documented"
+      ],
+      "files_to_modify": [],
+      "files_to_create": [
+        ".github/workflows/ci.yml",
+        ".github/workflows/cd.yml"
+      ],
+      "depends_on": [],
+      "blocks": [],
+      "estimated_minutes": 60,
+      "agent_hint": "Good for coding agents",
+      "started_at": null,
+      "completed_at": null,
+      "result": null,
+      "branch": null,
+      "pr_url": null
+    }
+  ]
+}
