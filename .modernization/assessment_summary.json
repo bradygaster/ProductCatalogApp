@@ -1,0 +1,9 @@
+{
+  "repository": "ProductCatalogApp",
+  "complexity_score": 3,
+  "detected_patterns": [
+    "wcf_service"
+  ],
+  "projects": [],
+  "total_files": 0
+}
