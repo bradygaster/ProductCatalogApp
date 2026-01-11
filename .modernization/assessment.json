@@ -1,0 +1,305 @@
+{
+  "assessment": {
+    "version": "1.0",
+    "timestamp": "2026-01-11T07:44:03.216Z",
+    "repository": "bradygaster/ProductCatalogApp",
+    "status": "complete"
+  },
+  "current_state": {
+    "framework": {
+      "name": ".NET Framework",
+      "version": "4.8.1",
+      "project_format": "legacy_csproj"
+    },
+    "architecture": {
+      "type": "multi-tier",
+      "components": [
+        {
+          "name": "ProductCatalog",
+          "type": "ASP.NET MVC 5",
+          "description": "Web frontend application with Razor views"
+        },
+        {
+          "name": "ProductServiceLibrary",
+          "type": "WCF Service Library",
+          "description": "Product data service using WCF"
+        },
+        {
+          "name": "OrderProcessor",
+          "type": "Console Application",
+          "description": "MSMQ-based order processing backend"
+        }
+      ]
+    },
+    "dependencies": {
+      "web": [
+        "Microsoft.AspNet.Mvc 5.2.9",
+        "Microsoft.AspNet.WebPages 3.2.9",
+        "Microsoft.AspNet.Razor 3.2.9",
+        "Newtonsoft.Json 13.0.3",
+        "jQuery 3.7.0",
+        "Bootstrap 5.2.3"
+      ],
+      "system": [
+        "System.Messaging (MSMQ)",
+        "System.ServiceModel (WCF)",
+        "System.Web"
+      ]
+    },
+    "legacy_patterns": [
+      {
+        "pattern": "Windows Communication Foundation (WCF)",
+        "location": "ProductServiceLibrary",
+        "impact": "high",
+        "reason": "WCF is not supported in .NET Core/.NET 5+"
+      },
+      {
+        "pattern": "Microsoft Message Queue (MSMQ)",
+        "location": "OrderProcessor, ProductCatalog/Services",
+        "impact": "high",
+        "reason": "MSMQ is Windows-only and not supported in containers"
+      },
+      {
+        "pattern": "ASP.NET MVC 5 (System.Web)",
+        "location": "ProductCatalog",
+        "impact": "high",
+        "reason": "System.Web-based MVC not compatible with .NET Core+"
+      },
+      {
+        "pattern": "Legacy .csproj format",
+        "location": "All projects",
+        "impact": "medium",
+        "reason": "Old MSBuild format, needs SDK-style migration"
+      },
+      {
+        "pattern": "Session state (in-memory)",
+        "location": "ProductCatalog/Controllers",
+        "impact": "medium",
+        "reason": "In-memory session won't work across containers"
+      },
+      {
+        "pattern": "NuGet packages.config",
+        "location": "ProductCatalog",
+        "impact": "low",
+        "reason": "Legacy package management, should use PackageReference"
+      }
+    ]
+  },
+  "target_state": {
+    "framework": ".NET 10",
+    "platform": "Azure Container Apps",
+    "architecture": "microservices"
+  },
+  "modernization_requirements": [
+    {
+      "category": "Framework Migration",
+      "tasks": [
+        "Migrate from .NET Framework 4.8.1 to .NET 10",
+        "Convert legacy .csproj to SDK-style projects",
+        "Replace packages.config with PackageReference"
+      ]
+    },
+    {
+      "category": "ASP.NET Migration",
+      "tasks": [
+        "Migrate ASP.NET MVC 5 to ASP.NET Core MVC",
+        "Replace System.Web dependencies with ASP.NET Core equivalents",
+        "Migrate Razor views to ASP.NET Core format",
+        "Replace IIS hosting with Kestrel"
+      ]
+    },
+    {
+      "category": "WCF Replacement",
+      "tasks": [
+        "Replace WCF service with REST API or gRPC",
+        "Convert ProductServiceLibrary to ASP.NET Core Web API",
+        "Update client in ProductCatalog to use HTTP client",
+        "Remove WCF-specific attributes and contracts"
+      ]
+    },
+    {
+      "category": "MSMQ Replacement",
+      "tasks": [
+        "Replace MSMQ with Azure Service Bus or Azure Storage Queues",
+        "Update OrderQueueService to use cloud messaging",
+        "Migrate OrderProcessor to use Azure messaging SDK",
+        "Update configuration for cloud queue connection strings"
+      ]
+    },
+    {
+      "category": "State Management",
+      "tasks": [
+        "Replace in-memory session with distributed cache (Redis)",
+        "Implement stateless API design or use Azure Cache for Redis",
+        "Update cart management to use distributed storage"
+      ]
+    },
+    {
+      "category": "Containerization",
+      "tasks": [
+        "Create Dockerfiles for each component",
+        "Configure container ports and environment variables",
+        "Setup health checks for container orchestration",
+        "Optimize container images for size and security"
+      ]
+    },
+    {
+      "category": "Azure Container Apps",
+      "tasks": [
+        "Create Container Apps for each service",
+        "Configure ingress and scaling rules",
+        "Setup Azure Service Bus for messaging",
+        "Configure Azure Cache for Redis for session",
+        "Implement service-to-service communication",
+        "Setup monitoring and Application Insights"
+      ]
+    }
+  ],
+  "complexity_analysis": {
+    "overall_complexity": 7,
+    "scale_explanation": "1=trivial, 10=complete rewrite",
+    "breakdown": {
+      "framework_migration": {
+        "score": 6,
+        "reason": "Standard .NET Framework to .NET 10 migration, well-documented process"
+      },
+      "wcf_replacement": {
+        "score": 7,
+        "reason": "WCF service needs complete replacement with modern API, requires client updates"
+      },
+      "msmq_replacement": {
+        "score": 8,
+        "reason": "MSMQ is deeply integrated, requires architectural changes and cloud messaging"
+      },
+      "mvc_migration": {
+        "score": 6,
+        "reason": "ASP.NET MVC to Core is straightforward, views may need updates"
+      },
+      "containerization": {
+        "score": 5,
+        "reason": "Standard containerization process, requires configuration"
+      },
+      "azure_deployment": {
+        "score": 6,
+        "reason": "Container Apps setup is straightforward, requires infrastructure as code"
+      }
+    },
+    "effort_estimate": {
+      "small_tasks": 15,
+      "medium_tasks": 8,
+      "large_tasks": 5,
+      "total_story_points": 55,
+      "estimated_weeks": "3-4 weeks for 2 developers"
+    }
+  },
+  "risks_and_challenges": [
+    {
+      "risk": "WCF to REST API Migration",
+      "severity": "high",
+      "mitigation": "Use incremental migration, maintain parallel WCF service temporarily if needed"
+    },
+    {
+      "risk": "MSMQ to Azure Service Bus",
+      "severity": "high",
+      "mitigation": "Test messaging patterns thoroughly, implement retry and error handling"
+    },
+    {
+      "risk": "Session state in distributed environment",
+      "severity": "medium",
+      "mitigation": "Implement Redis cache early, test cart persistence across restarts"
+    },
+    {
+      "risk": "Breaking changes in .NET 10",
+      "severity": "medium",
+      "mitigation": "Use .NET Upgrade Assistant, follow migration guides, comprehensive testing"
+    },
+    {
+      "risk": "Container orchestration complexity",
+      "severity": "low",
+      "mitigation": "Start with simple Container Apps configuration, add complexity incrementally"
+    }
+  ],
+  "recommended_approach": {
+    "strategy": "incremental_migration",
+    "phases": [
+      {
+        "phase": 1,
+        "name": "Foundation",
+        "duration": "1 week",
+        "tasks": [
+          "Setup development environment with .NET 10",
+          "Create new SDK-style projects",
+          "Migrate simple library code",
+          "Setup CI/CD pipeline"
+        ]
+      },
+      {
+        "phase": 2,
+        "name": "Service Layer",
+        "duration": "1 week",
+        "tasks": [
+          "Convert ProductServiceLibrary to ASP.NET Core Web API",
+          "Implement REST endpoints",
+          "Add Swagger/OpenAPI documentation",
+          "Containerize API service"
+        ]
+      },
+      {
+        "phase": 3,
+        "name": "Web Application",
+        "duration": "1 week",
+        "tasks": [
+          "Migrate MVC application to ASP.NET Core",
+          "Update views and controllers",
+          "Implement Redis for session/cart",
+          "Update client to use REST API",
+          "Containerize web application"
+        ]
+      },
+      {
+        "phase": 4,
+        "name": "Messaging & Backend",
+        "duration": "1 week",
+        "tasks": [
+          "Replace MSMQ with Azure Service Bus",
+          "Migrate OrderProcessor to .NET 10 console/worker",
+          "Implement message handlers",
+          "Containerize order processor",
+          "Deploy all services to Azure Container Apps"
+        ]
+      }
+    ]
+  },
+  "benefits": {
+    "technical": [
+      "Cross-platform compatibility (Linux containers)",
+      "Modern framework with better performance",
+      "Cloud-native architecture with auto-scaling",
+      "Easier CI/CD and deployment automation",
+      "Better monitoring and observability",
+      "Reduced licensing costs (no Windows Server needed)"
+    ],
+    "business": [
+      "Lower infrastructure costs with Container Apps",
+      "Improved scalability and reliability",
+      "Faster time to market for new features",
+      "Better developer productivity",
+      "Future-proof technology stack"
+    ]
+  },
+  "compatibility_notes": {
+    "azure_container_apps": {
+      "supported": true,
+      "notes": "All components can be containerized and run on Container Apps after modernization"
+    },
+    "linux_containers": {
+      "supported": true,
+      "notes": "After migration to .NET 10, all components will run on Linux containers"
+    },
+    "current_blockers": [
+      "MSMQ requires Windows Server and cannot run in containers",
+      "WCF has limited support in .NET Core (CoreWCF available but REST is preferred)",
+      "System.Web dependencies tie application to Windows/IIS"
+    ]
+  }
+}
