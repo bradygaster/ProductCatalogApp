@@ -2,8 +2,8 @@
   "repository": "ProductCatalogApp",
   "complexity_score": 4,
   "detected_patterns": [
-    "wcf_service",
     "classic_mvc",
+    "wcf_service",
     "msmq"
   ],
   "projects": [
