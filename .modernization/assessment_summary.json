@@ -1,0 +1,24 @@
+{
+  "repository": "ProductCatalogApp",
+  "complexity_score": 4,
+  "detected_patterns": [
+    "wcf_service",
+    "classic_mvc",
+    "msmq"
+  ],
+  "projects": [
+    {
+      "name": "ProductCatalog",
+      "path": "ProductCatalog\\ProductCatalog.csproj",
+      "target_framework": "v4.8.1",
+      "is_sdk_style": false
+    },
+    {
+      "name": "ProductServiceLibrary",
+      "path": "ProductServiceLibrary\\ProductServiceLibrary.csproj",
+      "target_framework": "v4.8.1",
+      "is_sdk_style": false
+    }
+  ],
+  "total_files": 0
+}
