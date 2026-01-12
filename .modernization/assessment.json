@@ -1,0 +1,300 @@
+{
+  "assessmentMetadata": {
+    "assessmentDate": "2026-01-12T16:23:24.726Z",
+    "assessmentVersion": "1.0",
+    "targetFramework": ".NET 10",
+    "targetPlatform": "Azure Container Apps"
+  },
+  "projectStructure": {
+    "solutionName": "ProductCatalogApp",
+    "projects": [
+      {
+        "name": "ProductCatalog",
+        "type": "ASP.NET MVC Web Application",
+        "currentFramework": ".NET Framework 4.8.1",
+        "projectSystem": "Legacy (non-SDK style)",
+        "linesOfCode": "~2000"
+      },
+      {
+        "name": "ProductServiceLibrary",
+        "type": "WCF Service Library",
+        "currentFramework": ".NET Framework 4.8.1",
+        "projectSystem": "Legacy (non-SDK style)",
+        "linesOfCode": "~500"
+      },
+      {
+        "name": "OrderProcessor",
+        "type": "Console Application",
+        "currentFramework": ".NET Framework 4.8.1",
+        "projectSystem": "Legacy (non-SDK style)",
+        "linesOfCode": "~200"
+      }
+    ]
+  },
+  "currentState": {
+    "framework": {
+      "version": ".NET Framework 4.8.1",
+      "eolStatus": "Not announced but legacy",
+      "supportStatus": "Maintenance mode"
+    },
+    "dependencies": {
+      "totalPackages": 16,
+      "outdatedPackages": 3,
+      "vulnerablePackages": 0,
+      "packages": [
+        {
+          "name": "Microsoft.AspNet.Mvc",
+          "version": "5.2.9",
+          "status": "Legacy - No .NET Core/Modern equivalent needed"
+        },
+        {
+          "name": "Newtonsoft.Json",
+          "version": "13.0.3",
+          "status": "Compatible with modern .NET"
+        },
+        {
+          "name": "bootstrap",
+          "version": "5.2.3",
+          "status": "Frontend - Compatible"
+        },
+        {
+          "name": "jQuery",
+          "version": "3.7.0",
+          "status": "Frontend - Compatible"
+        }
+      ]
+    },
+    "architecture": {
+      "pattern": "MVC with WCF Services",
+      "dataAccess": "In-memory repository",
+      "messaging": "MSMQ (Microsoft Message Queuing)",
+      "authentication": "Session-based",
+      "stateManagement": "Session state",
+      "hosting": "IIS/Windows"
+    }
+  },
+  "migrationComplexity": {
+    "overall": 8,
+    "breakdown": {
+      "framework": 7,
+      "architecture": 9,
+      "dependencies": 6,
+      "infrastructure": 8,
+      "testing": 5
+    },
+    "justification": "High complexity due to WCF services, MSMQ dependency, session state, and need for complete architectural redesign"
+  },
+  "blockers": [
+    {
+      "category": "Critical",
+      "issue": "WCF Services",
+      "description": "ProductServiceLibrary uses Windows Communication Foundation (WCF) which is not fully supported in modern .NET. Requires migration to gRPC, REST API, or CoreWCF.",
+      "effort": "High",
+      "risk": "High"
+    },
+    {
+      "category": "Critical",
+      "issue": "MSMQ (Microsoft Message Queuing)",
+      "description": "Application uses MSMQ for order processing. MSMQ is Windows-specific and not available in containers. Requires migration to Azure Service Bus, Azure Storage Queues, or RabbitMQ.",
+      "effort": "High",
+      "risk": "High"
+    },
+    {
+      "category": "High",
+      "issue": "Session State",
+      "description": "Application uses in-process session state which is not suitable for containerized, stateless applications. Needs migration to distributed cache (Redis) or stateless design.",
+      "effort": "Medium",
+      "risk": "Medium"
+    },
+    {
+      "category": "High",
+      "issue": "Legacy Project Format",
+      "description": "All projects use legacy .csproj format (non-SDK style) with packages.config. Requires conversion to SDK-style projects.",
+      "effort": "Medium",
+      "risk": "Low"
+    },
+    {
+      "category": "Medium",
+      "issue": "ASP.NET MVC to ASP.NET Core Migration",
+      "description": "Application uses ASP.NET MVC 5 which needs to be migrated to ASP.NET Core MVC or Razor Pages.",
+      "effort": "High",
+      "risk": "Medium"
+    },
+    {
+      "category": "Medium",
+      "issue": "System.Web Dependencies",
+      "description": "Heavy reliance on System.Web namespace which doesn't exist in .NET Core/Modern .NET.",
+      "effort": "Medium",
+      "risk": "Medium"
+    }
+  ],
+  "modernizationPath": {
+    "strategy": "Incremental Rewrite",
+    "recommendedApproach": "Strangler Fig Pattern",
+    "phases": [
+      {
+        "phase": 1,
+        "name": "Foundation and Infrastructure",
+        "duration": "2-3 weeks",
+        "tasks": [
+          "Create new .NET 10 solution structure",
+          "Migrate ProductServiceLibrary to ASP.NET Core Web API",
+          "Setup Azure Service Bus to replace MSMQ",
+          "Setup Azure Redis Cache for distributed state",
+          "Create Dockerfiles for containerization",
+          "Setup Azure Container Apps infrastructure"
+        ]
+      },
+      {
+        "phase": 2,
+        "name": "Core Application Migration",
+        "duration": "3-4 weeks",
+        "tasks": [
+          "Migrate ProductCatalog to ASP.NET Core MVC",
+          "Update controllers and views",
+          "Replace WCF client with HTTP client",
+          "Implement distributed caching for cart",
+          "Update authentication and authorization",
+          "Migrate configuration to appsettings.json"
+        ]
+      },
+      {
+        "phase": 3,
+        "name": "Background Processing",
+        "duration": "1-2 weeks",
+        "tasks": [
+          "Migrate OrderProcessor to .NET 10 Worker Service",
+          "Replace MSMQ with Azure Service Bus",
+          "Implement proper error handling and retry logic",
+          "Add health checks and observability"
+        ]
+      },
+      {
+        "phase": 4,
+        "name": "Testing and Deployment",
+        "duration": "2-3 weeks",
+        "tasks": [
+          "Comprehensive testing (unit, integration, E2E)",
+          "Performance testing and optimization",
+          "Security scanning and hardening",
+          "Setup CI/CD pipelines",
+          "Deploy to Azure Container Apps",
+          "Monitoring and alerting setup"
+        ]
+      }
+    ],
+    "estimatedDuration": "8-12 weeks",
+    "estimatedEffort": "240-360 person-hours"
+  },
+  "azureContainerAppsReadiness": {
+    "currentScore": 2,
+    "targetScore": 10,
+    "requirements": [
+      {
+        "requirement": "Containerization",
+        "status": "Not Ready",
+        "notes": "No Dockerfiles present. Application requires Windows for MSMQ."
+      },
+      {
+        "requirement": "Stateless Design",
+        "status": "Not Ready",
+        "notes": "Uses in-process session state. Requires distributed cache."
+      },
+      {
+        "requirement": "Cloud-Native Services",
+        "status": "Not Ready",
+        "notes": "Uses MSMQ (Windows-only). Requires Azure Service Bus or Storage Queues."
+      },
+      {
+        "requirement": "Modern .NET Runtime",
+        "status": "Not Ready",
+        "notes": "Uses .NET Framework 4.8.1. Requires .NET 10."
+      },
+      {
+        "requirement": "12-Factor App Principles",
+        "status": "Partial",
+        "notes": "Configuration in web.config. Needs environment-based configuration."
+      },
+      {
+        "requirement": "Health Checks",
+        "status": "Not Present",
+        "notes": "No health checks implemented. Required for Container Apps."
+      },
+      {
+        "requirement": "Observability",
+        "status": "Minimal",
+        "notes": "No structured logging or monitoring. Needs Application Insights."
+      }
+    ]
+  },
+  "recommendations": {
+    "immediate": [
+      "Create comprehensive test suite before migration",
+      "Document current business logic and workflows",
+      "Setup Azure resources (Service Bus, Redis, Container Apps)",
+      "Create proof-of-concept for critical components"
+    ],
+    "migration": [
+      "Use .NET Upgrade Assistant for initial project conversion",
+      "Implement API-first approach for service layer",
+      "Use Azure Service Bus for reliable messaging",
+      "Implement distributed caching with Azure Redis",
+      "Use Application Insights for observability",
+      "Implement health checks and readiness probes"
+    ],
+    "postMigration": [
+      "Implement automated testing in CI/CD",
+      "Setup monitoring and alerting",
+      "Document architecture and deployment process",
+      "Plan for scaling and performance optimization",
+      "Regular security updates and dependency scanning"
+    ]
+  },
+  "risks": [
+    {
+      "risk": "WCF to REST/gRPC Migration",
+      "probability": "High",
+      "impact": "High",
+      "mitigation": "Use CoreWCF as intermediate step if needed, or design clear REST/gRPC contracts"
+    },
+    {
+      "risk": "MSMQ to Azure Service Bus Migration",
+      "probability": "Medium",
+      "impact": "High",
+      "mitigation": "Implement message compatibility layer, thorough testing of message delivery"
+    },
+    {
+      "risk": "Session State Migration",
+      "probability": "Medium",
+      "impact": "Medium",
+      "mitigation": "Use Azure Redis Cache, test cart functionality extensively"
+    },
+    {
+      "risk": "Breaking Changes During Migration",
+      "probability": "High",
+      "impact": "Medium",
+      "mitigation": "Comprehensive testing, feature flags, gradual rollout"
+    }
+  ],
+  "qualityMetrics": {
+    "testCoverage": "0%",
+    "codeQuality": "Medium",
+    "documentation": "Minimal",
+    "securityPosture": "Basic"
+  },
+  "estimatedCosts": {
+    "development": {
+      "hours": "240-360",
+      "complexity": "High"
+    },
+    "azure": {
+      "monthly": "$100-300",
+      "services": [
+        "Azure Container Apps (consumption-based)",
+        "Azure Service Bus (Standard tier)",
+        "Azure Redis Cache (Basic tier)",
+        "Azure Application Insights"
+      ]
+    }
+  }
+}
