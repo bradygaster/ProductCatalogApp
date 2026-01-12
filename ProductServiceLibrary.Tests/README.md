@@ -46,3 +46,7 @@ All tests are passing:
 ## Notes
 
 This is a standalone test project created for testing purposes. The Product and Category models are copied into this project to enable testing without requiring the full .NET Framework WCF build environment.
+
+### Model Differences
+
+The models in this test project use modern .NET 10.0 conventions (e.g., non-nullable reference types with default values) while the original models in ProductServiceLibrary use .NET Framework 4.8.1 conventions with nullable strings. This is intentional to demonstrate modern C# testing practices while maintaining compatibility with the core business logic being tested.
