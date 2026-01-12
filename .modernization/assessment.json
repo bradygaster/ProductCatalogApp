@@ -1,0 +1,345 @@
+{
+  "metadata": {
+    "assessmentDate": "2026-01-12T23:17:23.593Z",
+    "repositoryName": "ProductCatalogApp",
+    "repositoryOwner": "bradygaster",
+    "assessor": "GitHub Copilot Modernization Agent",
+    "targetFramework": ".NET 10",
+    "targetPlatform": "Azure Container Apps"
+  },
+  "currentState": {
+    "frameworkVersion": ".NET Framework 4.8.1",
+    "projectType": "Multi-project solution",
+    "architecture": {
+      "pattern": "3-tier (Web, Service, Data)",
+      "components": [
+        {
+          "name": "ProductCatalog",
+          "type": "ASP.NET MVC 5 Web Application",
+          "framework": ".NET Framework 4.8.1",
+          "projectFormat": "Legacy (non-SDK-style)"
+        },
+        {
+          "name": "ProductServiceLibrary",
+          "type": "WCF Service Library",
+          "framework": ".NET Framework 4.8.1",
+          "projectFormat": "Legacy (non-SDK-style)"
+        },
+        {
+          "name": "OrderProcessor",
+          "type": "Console Application",
+          "framework": "Unknown (no .csproj found)",
+          "projectFormat": "Unknown"
+        }
+      ]
+    },
+    "dependencies": [
+      {
+        "name": "Microsoft.AspNet.Mvc",
+        "version": "5.2.9",
+        "category": "Web Framework",
+        "modernReplacement": "ASP.NET Core MVC"
+      },
+      {
+        "name": "Microsoft.AspNet.WebPages",
+        "version": "3.2.9",
+        "category": "Web Framework",
+        "modernReplacement": "ASP.NET Core Razor Pages"
+      },
+      {
+        "name": "Newtonsoft.Json",
+        "version": "13.0.3",
+        "category": "JSON Serialization",
+        "modernReplacement": "System.Text.Json (or keep Newtonsoft.Json)"
+      },
+      {
+        "name": "bootstrap",
+        "version": "5.2.3",
+        "category": "Frontend",
+        "modernReplacement": "Keep current or upgrade to 5.3+"
+      },
+      {
+        "name": "jQuery",
+        "version": "3.7.0",
+        "category": "Frontend",
+        "modernReplacement": "Keep current or consider modern alternatives"
+      },
+      {
+        "name": "System.ServiceModel (WCF)",
+        "version": "Built-in",
+        "category": "Service Communication",
+        "modernReplacement": "gRPC, REST API, or CoreWCF"
+      },
+      {
+        "name": "System.Messaging (MSMQ)",
+        "version": "Built-in",
+        "category": "Message Queue",
+        "modernReplacement": "Azure Service Bus, Azure Storage Queues, or RabbitMQ"
+      }
+    ],
+    "statistics": {
+      "totalProjects": 3,
+      "totalSourceFiles": 25,
+      "totalLinesOfCode": 1964,
+      "csFiles": 19,
+      "cshtmlFiles": 6
+    }
+  },
+  "legacyPatterns": [
+    {
+      "pattern": "ASP.NET MVC 5 on .NET Framework",
+      "severity": "High",
+      "impact": "Complete rewrite required for ASP.NET Core",
+      "location": "ProductCatalog project",
+      "modernizationEffort": "High",
+      "description": "ASP.NET MVC 5 uses System.Web which doesn't exist in .NET Core/.NET 10"
+    },
+    {
+      "pattern": "WCF (Windows Communication Foundation)",
+      "severity": "High",
+      "impact": "Service communication layer needs replacement",
+      "location": "ProductServiceLibrary project",
+      "modernizationEffort": "Medium-High",
+      "description": "WCF is not supported in .NET Core/.NET 10. Options: gRPC, REST API, or CoreWCF"
+    },
+    {
+      "pattern": "MSMQ (Microsoft Message Queuing)",
+      "severity": "High",
+      "impact": "Message queuing needs replacement for cloud deployment",
+      "location": "OrderProcessor and ProductCatalog.Services",
+      "modernizationEffort": "Medium",
+      "description": "MSMQ is Windows-specific and not available in Azure Container Apps"
+    },
+    {
+      "pattern": "In-memory data storage",
+      "severity": "Medium",
+      "impact": "Data will not persist across container restarts",
+      "location": "ProductRepository.cs",
+      "modernizationEffort": "Medium",
+      "description": "Static in-memory lists need to be replaced with persistent storage (Azure SQL, Cosmos DB, etc.)"
+    },
+    {
+      "pattern": "Session state (in-memory)",
+      "severity": "Medium",
+      "impact": "Session data will not persist across container instances",
+      "location": "HomeController.cs (Shopping Cart)",
+      "modernizationEffort": "Low-Medium",
+      "description": "In-memory session needs distributed cache (Azure Cache for Redis)"
+    },
+    {
+      "pattern": "Legacy project format (non-SDK-style)",
+      "severity": "Medium",
+      "impact": "Must convert to SDK-style projects",
+      "location": "All projects",
+      "modernizationEffort": "Medium",
+      "description": "Old .csproj format with packages.config needs conversion to SDK-style with PackageReference"
+    },
+    {
+      "pattern": "Web.config XML configuration",
+      "severity": "Low",
+      "impact": "Configuration needs to use appsettings.json",
+      "location": "ProductCatalog/Web.config",
+      "modernizationEffort": "Low",
+      "description": "ASP.NET Core uses JSON-based configuration instead of XML"
+    },
+    {
+      "pattern": "Global.asax for application startup",
+      "severity": "Low",
+      "impact": "Startup logic needs to move to Program.cs/Startup.cs",
+      "location": "ProductCatalog/Global.asax",
+      "modernizationEffort": "Low",
+      "description": "ASP.NET Core uses Program.cs with WebApplicationBuilder pattern"
+    },
+    {
+      "pattern": "Razor views with .NET Framework syntax",
+      "severity": "Low-Medium",
+      "impact": "Views may need minor adjustments",
+      "location": "ProductCatalog/Views",
+      "modernizationEffort": "Low",
+      "description": "Most Razor syntax compatible but may need namespace/helper adjustments"
+    },
+    {
+      "pattern": "IIS-specific configuration",
+      "severity": "Low",
+      "impact": "Remove IIS dependencies for container deployment",
+      "location": "ProductCatalog.csproj, Web.config",
+      "modernizationEffort": "Low",
+      "description": "Container Apps use Kestrel, not IIS"
+    }
+  ],
+  "azureContainerAppsReadiness": {
+    "currentReadiness": "Low",
+    "blockers": [
+      {
+        "issue": "Requires Windows containers",
+        "description": ".NET Framework 4.8.1 only runs on Windows containers, which are not supported by Azure Container Apps",
+        "resolution": "Migrate to .NET 10 to use Linux containers"
+      },
+      {
+        "issue": "MSMQ dependency",
+        "description": "MSMQ is not available in containers and requires replacement",
+        "resolution": "Replace with Azure Service Bus or Azure Storage Queues"
+      },
+      {
+        "issue": "WCF Service",
+        "description": "WCF requires complex hosting setup in containers",
+        "resolution": "Replace with REST API (ASP.NET Core Web API) or gRPC"
+      },
+      {
+        "issue": "No containerization artifacts",
+        "description": "No Dockerfile or container configuration present",
+        "resolution": "Create Dockerfile and container configuration"
+      },
+      {
+        "issue": "In-memory state",
+        "description": "Session and data stored in memory will be lost on container restart",
+        "resolution": "Use distributed cache and persistent storage"
+      }
+    ],
+    "recommendations": [
+      "Migrate to .NET 10 for Linux container support",
+      "Replace WCF with ASP.NET Core Web API",
+      "Replace MSMQ with Azure Service Bus",
+      "Implement persistent data storage (Azure SQL or Cosmos DB)",
+      "Use Azure Cache for Redis for distributed session state",
+      "Add health check endpoints for container orchestration",
+      "Implement structured logging for container monitoring",
+      "Add OpenTelemetry for observability"
+    ]
+  },
+  "complexityScore": {
+    "overall": 7,
+    "breakdown": {
+      "frameworkMigration": 8,
+      "architectureChanges": 7,
+      "dependencyUpdates": 6,
+      "dataLayerMigration": 6,
+      "serviceLayerMigration": 8,
+      "uiMigration": 5,
+      "infrastructureMigration": 7,
+      "testingEffort": 5
+    },
+    "justification": "Complexity is HIGH (7/10) due to: (1) Complete framework migration from .NET Framework to .NET 10, (2) WCF service replacement required, (3) MSMQ to Azure Service Bus migration, (4) In-memory data needs persistent storage, (5) Session state needs distributed cache. However, small codebase (~2K LOC) and simple MVC architecture reduce overall complexity."
+  },
+  "migrationPath": {
+    "strategy": "Incremental modernization with parallel systems",
+    "estimatedDuration": "4-6 weeks",
+    "phases": [
+      {
+        "phase": 1,
+        "name": "Project Structure Modernization",
+        "duration": "1 week",
+        "tasks": [
+          "Convert projects to .NET 10 SDK-style format",
+          "Update all NuGet packages to .NET 10 compatible versions",
+          "Migrate from packages.config to PackageReference",
+          "Set up new solution structure"
+        ]
+      },
+      {
+        "phase": 2,
+        "name": "Service Layer Migration",
+        "duration": "1-2 weeks",
+        "tasks": [
+          "Replace WCF service with ASP.NET Core Web API",
+          "Implement RESTful endpoints for product operations",
+          "Add database persistence layer (replace in-memory storage)",
+          "Migrate data models to Entity Framework Core",
+          "Add API authentication and authorization"
+        ]
+      },
+      {
+        "phase": 3,
+        "name": "Web Application Migration",
+        "duration": "1-2 weeks",
+        "tasks": [
+          "Migrate ASP.NET MVC 5 to ASP.NET Core MVC",
+          "Update controllers and views for ASP.NET Core",
+          "Replace WCF client calls with HTTP API calls",
+          "Migrate Web.config to appsettings.json",
+          "Implement distributed session state with Redis",
+          "Update authentication and authorization"
+        ]
+      },
+      {
+        "phase": 4,
+        "name": "Message Queue Migration",
+        "duration": "1 week",
+        "tasks": [
+          "Replace MSMQ with Azure Service Bus",
+          "Update OrderQueueService to use Azure Service Bus SDK",
+          "Migrate OrderProcessor to Azure Service Bus consumer",
+          "Implement retry policies and dead letter queue handling"
+        ]
+      },
+      {
+        "phase": 5,
+        "name": "Containerization & Deployment",
+        "duration": "1 week",
+        "tasks": [
+          "Create Dockerfiles for each service",
+          "Add health check endpoints",
+          "Configure Azure Container Apps resources",
+          "Set up Azure Container Registry",
+          "Implement CI/CD pipeline",
+          "Configure monitoring and logging",
+          "Deploy to Azure Container Apps"
+        ]
+      }
+    ]
+  },
+  "risks": [
+    {
+      "risk": "Business logic hidden in WCF service contracts",
+      "severity": "Medium",
+      "mitigation": "Thorough analysis and testing of all WCF operations during API migration"
+    },
+    {
+      "risk": "Session-dependent shopping cart functionality",
+      "severity": "Medium",
+      "mitigation": "Implement distributed cache early in migration"
+    },
+    {
+      "risk": "In-flight orders in MSMQ during migration",
+      "severity": "Low",
+      "mitigation": "Plan migration window and process all pending messages before cutover"
+    },
+    {
+      "risk": "View compatibility issues during MVC migration",
+      "severity": "Low",
+      "mitigation": "Test all views thoroughly, most Razor syntax is compatible"
+    }
+  ],
+  "recommendations": [
+    {
+      "priority": "High",
+      "recommendation": "Start with data layer modernization",
+      "rationale": "Replace in-memory storage with proper database to ensure data persistence in containers"
+    },
+    {
+      "priority": "High",
+      "recommendation": "Replace WCF with REST API early",
+      "rationale": "Service layer is foundational and should be modernized before web application"
+    },
+    {
+      "priority": "High",
+      "recommendation": "Plan MSMQ to Azure Service Bus migration carefully",
+      "rationale": "Message queuing is critical for order processing, ensure no message loss"
+    },
+    {
+      "priority": "Medium",
+      "recommendation": "Implement distributed caching for session state",
+      "rationale": "Required for stateless container deployment with multiple instances"
+    },
+    {
+      "priority": "Medium",
+      "recommendation": "Add comprehensive logging and monitoring",
+      "rationale": "Essential for debugging and observability in container environments"
+    },
+    {
+      "priority": "Low",
+      "recommendation": "Consider UI modernization with Blazor",
+      "rationale": "Optional: Could modernize to Blazor Server or Blazor WASM for better performance"
+    }
+  ]
+}
