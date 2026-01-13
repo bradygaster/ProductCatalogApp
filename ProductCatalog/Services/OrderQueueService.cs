@@ -1,7 +1,5 @@
 using ProductCatalog.Models;
-using System;
-using System.Configuration;
-using System.Messaging;
+using Microsoft.Extensions.Configuration;
 
 namespace ProductCatalog.Services
 {
@@ -9,49 +7,28 @@ namespace ProductCatalog.Services
     {
         private readonly string _queuePath;
 
-        public OrderQueueService()
+        public OrderQueueService(IConfiguration configuration = null)
         {
-            _queuePath = ConfigurationManager.AppSettings["OrderQueuePath"] ?? @".\Private$\ProductCatalogOrders";
-            EnsureQueueExists();
+            _queuePath = configuration?["OrderQueuePath"] ?? @".\Private$\ProductCatalogOrders";
+            // Note: MSMQ (System.Messaging) is not available in .NET Core/.NET 5+
+            // This is a placeholder implementation for Windows-only scenarios
+            // Consider using Azure Service Bus, RabbitMQ, or other cross-platform message queues
         }
 
         public OrderQueueService(string queuePath)
         {
             _queuePath = queuePath;
-            EnsureQueueExists();
-        }
-
-        private void EnsureQueueExists()
-        {
-            try
-            {
-                if (!MessageQueue.Exists(_queuePath))
-                {
-                    MessageQueue.Create(_queuePath);
-                }
-            }
-            catch (Exception ex)
-            {
-                throw new InvalidOperationException($"Failed to create or access message queue at {_queuePath}", ex);
-            }
         }
 
         public void SendOrder(Order order)
         {
             try
             {
-                using (MessageQueue queue = new MessageQueue(_queuePath))
-                {
-                    queue.Formatter = new XmlMessageFormatter(new Type[] { typeof(Order) });
-                    
-                    Message message = new Message(order)
-                    {
-                        Label = $"Order {order.OrderId}",
-                        Recoverable = true
-                    };
-
-                    queue.Send(message);
-                }
+                // MSMQ is Windows-only and not available in modern .NET
+                // This is a stub implementation
+                // TODO: Implement cross-platform message queue (Azure Service Bus, RabbitMQ, etc.)
+                Console.WriteLine($"Order {order.OrderId} would be sent to queue: {_queuePath}");
+                Console.WriteLine($"Total: ${order.Total:N2}, Items: {order.Items.Count}");
             }
             catch (Exception ex)
             {
@@ -61,39 +38,14 @@ namespace ProductCatalog.Services
 
         public Order ReceiveOrder(TimeSpan timeout)
         {
-            try
-            {
-                using (MessageQueue queue = new MessageQueue(_queuePath))
-                {
-                    queue.Formatter = new XmlMessageFormatter(new Type[] { typeof(Order) });
-                    
-                    Message message = queue.Receive(timeout);
-                    return (Order)message.Body;
-                }
-            }
-            catch (MessageQueueException ex) when (ex.MessageQueueErrorCode == MessageQueueErrorCode.IOTimeout)
-            {
-                return null;
-            }
-            catch (Exception ex)
-            {
-                throw new InvalidOperationException("Failed to receive order from queue", ex);
-            }
+            // Stub implementation - MSMQ not available in modern .NET
+            return null;
         }
 
         public int GetQueueMessageCount()
         {
-            try
-            {
-                using (MessageQueue queue = new MessageQueue(_queuePath))
-                {
-                    return queue.GetAllMessages().Length;
-                }
-            }
-            catch (Exception)
-            {
-                return 0;
-            }
+            // Stub implementation - MSMQ not available in modern .NET
+            return 0;
         }
     }
 }

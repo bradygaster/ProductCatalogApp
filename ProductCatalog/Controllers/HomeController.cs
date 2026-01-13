@@ -1,15 +1,26 @@
 ﻿using ProductCatalog.Models;
 using ProductCatalog.ProductServiceReference;
 using ProductCatalog.Services;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Web.Mvc;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Http;
+using Newtonsoft.Json;
 
 namespace ProductCatalog.Controllers
 {
     public class HomeController : Controller
     {
+        // Helper methods for session management in ASP.NET Core
+        private List<CartItem> GetCart()
+        {
+            var cartJson = HttpContext.Session.GetString("Cart");
+            return cartJson == null ? new List<CartItem>() : JsonConvert.DeserializeObject<List<CartItem>>(cartJson);
+        }
+
+        private void SetCart(List<CartItem> cart)
+        {
+            HttpContext.Session.SetString("Cart", JsonConvert.SerializeObject(cart));
+        }
+
         public ActionResult Index()
         {
             List<Product> products = new List<Product>();
@@ -42,7 +53,7 @@ namespace ProductCatalog.Controllers
 
                 if (product != null)
                 {
-                    var cart = Session["Cart"] as List<CartItem> ?? new List<CartItem>();
+                    var cart = GetCart();
                     var existingItem = cart.FirstOrDefault(c => c.Product.Id == productId);
 
                     if (existingItem != null)
@@ -58,7 +69,7 @@ namespace ProductCatalog.Controllers
                         });
                     }
 
-                    Session["Cart"] = cart;
+                    SetCart(cart);
                     TempData["SuccessMessage"] = product.Name + " has been added to your cart!";
                 }
                 else
@@ -76,7 +87,7 @@ namespace ProductCatalog.Controllers
 
         public ActionResult Cart()
         {
-            var cart = Session["Cart"] as List<CartItem> ?? new List<CartItem>();
+            var cart = GetCart();
             return View(cart);
         }
 
@@ -85,7 +96,7 @@ namespace ProductCatalog.Controllers
         {
             try
             {
-                var cart = Session["Cart"] as List<CartItem> ?? new List<CartItem>();
+                var cart = GetCart();
                 var item = cart.FirstOrDefault(c => c.Product.Id == productId);
 
                 if (item != null)
@@ -108,7 +119,7 @@ namespace ProductCatalog.Controllers
                         TempData["SuccessMessage"] = "Item removed from cart.";
                     }
 
-                    Session["Cart"] = cart;
+                    SetCart(cart);
                 }
             }
             catch (Exception ex)
@@ -124,13 +135,13 @@ namespace ProductCatalog.Controllers
         {
             try
             {
-                var cart = Session["Cart"] as List<CartItem> ?? new List<CartItem>();
+                var cart = GetCart();
                 var item = cart.FirstOrDefault(c => c.Product.Id == productId);
 
                 if (item != null)
                 {
                     cart.Remove(item);
-                    Session["Cart"] = cart;
+                    SetCart(cart);
                     TempData["SuccessMessage"] = item.Product.Name + " has been removed from your cart.";
                 }
             }
@@ -145,7 +156,7 @@ namespace ProductCatalog.Controllers
         [HttpPost]
         public ActionResult ClearCart()
         {
-            Session["Cart"] = new List<CartItem>();
+            SetCart(new List<CartItem>());
             TempData["SuccessMessage"] = "Your cart has been cleared.";
             return RedirectToAction("Cart");
         }
@@ -155,7 +166,7 @@ namespace ProductCatalog.Controllers
         {
             try
             {
-                var cart = Session["Cart"] as List<CartItem> ?? new List<CartItem>();
+                var cart = GetCart();
 
                 if (cart == null || !cart.Any())
                 {
@@ -172,7 +183,7 @@ namespace ProductCatalog.Controllers
                 // Create order
                 var order = new Order
                 {
-                    CustomerSessionId = Session.SessionID,
+                    CustomerSessionId = HttpContext.Session.Id,
                     Subtotal = subtotal,
                     Tax = tax,
                     Shipping = shipping,
@@ -198,7 +209,7 @@ namespace ProductCatalog.Controllers
                 queueService.SendOrder(order);
 
                 // Clear the cart
-                Session["Cart"] = new List<CartItem>();
+                SetCart(new List<CartItem>());
 
                 // Redirect to confirmation page
                 TempData["SuccessMessage"] = $"Order {order.OrderId} has been submitted successfully! Total: ${total:N2}";
