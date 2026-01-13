@@ -1,6 +1,5 @@
+using Microsoft.Extensions.Configuration;
 using ProductCatalog.Models;
-using System;
-using System.Configuration;
 using System.Messaging;
 
 namespace ProductCatalog.Services
@@ -11,7 +10,13 @@ namespace ProductCatalog.Services
 
         public OrderQueueService()
         {
-            _queuePath = ConfigurationManager.AppSettings["OrderQueuePath"] ?? @".\Private$\ProductCatalogOrders";
+            _queuePath = @".\Private$\ProductCatalogOrders";
+            EnsureQueueExists();
+        }
+
+        public OrderQueueService(IConfiguration configuration)
+        {
+            _queuePath = configuration["OrderQueuePath"] ?? @".\Private$\ProductCatalogOrders";
             EnsureQueueExists();
         }
 
