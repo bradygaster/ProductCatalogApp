@@ -48,11 +48,11 @@ jobs:
         run: nuget restore ProductCatalogApp.slnx
       
       - name: Build solution
-        run: msbuild ProductCatalogApp.slnx /p:Configuration=Release /p:Platform="Any CPU" /p:DeployOnBuild=true /p:WebPublishMethod=Package /p:PackageAsSingleFile=true /p:SkipInvalidConfigurations=true
+        run: msbuild ProductCatalog/ProductCatalog.csproj /p:Configuration=Release /p:Platform="Any CPU" /p:DeployOnBuild=true /p:WebPublishMethod=FileSystem /p:PublishUrl=./publish /p:DeleteExistingFiles=true
       
       - name: Create deployment package
         run: |
-          Compress-Archive -Path ./ProductCatalog/bin/* -DestinationPath ./deployment-package.zip
+          Compress-Archive -Path ./ProductCatalog/publish/* -DestinationPath ./deployment-package.zip
         shell: pwsh
       
       - name: Upload deployment package
@@ -147,6 +147,9 @@ jobs:
     if: github.event.inputs.environment == 'production'
     
     steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
       - name: Download deployment package
         uses: actions/download-artifact@v4
         with:

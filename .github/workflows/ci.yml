@@ -53,7 +53,10 @@ jobs:
           if ($testProjects.Count -gt 0) {
             foreach ($testProject in $testProjects) {
               Write-Host "Running tests in $($testProject.FullName)"
-              vstest.console.exe "$($testProject.Directory)\bin\Release\*.Tests.dll" /Logger:trx
+              $testDlls = Get-ChildItem -Path "$($testProject.Directory)\bin\Release" -Filter "*.dll" | Where-Object { $_.Name -notlike "Microsoft.*" -and $_.Name -notlike "System.*" }
+              if ($testDlls.Count -gt 0) {
+                vstest.console.exe $testDlls.FullName /Logger:trx
+              }
             }
           } else {
             Write-Host "No test projects found - skipping test execution"
