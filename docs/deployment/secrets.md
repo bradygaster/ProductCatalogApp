@@ -134,6 +134,6 @@ Configure the following environments in GitHub:
 
 ## Additional Resources
 
-- [Azure Service Principal Documentation](https://docs.microsoft.com/azure/active-role-based-access-control/create-service-principal-portal)
+- [Azure Service Principal Documentation](https://docs.microsoft.com/azure/active-directory/develop/howto-create-service-principal-portal)
 - [GitHub Secrets Documentation](https://docs.github.com/actions/security-guides/encrypted-secrets)
 - [Azure Web Apps Deployment](https://docs.microsoft.com/azure/app-service/deploy-github-actions)

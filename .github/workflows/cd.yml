@@ -35,7 +35,9 @@ jobs:
       - name: Cache NuGet packages
         uses: actions/cache@v4
         with:
-          path: ~/.nuget/packages
+          path: |
+            packages
+            %USERPROFILE%\.nuget\packages
           key: ${{ runner.os }}-nuget-${{ hashFiles('**/packages.config') }}
           restore-keys: |
             ${{ runner.os }}-nuget-
@@ -44,11 +46,11 @@ jobs:
         run: nuget restore ProductCatalogApp.slnx
       
       - name: Build solution
-        run: msbuild ProductCatalogApp.slnx /p:Configuration=Release /p:Platform="Any CPU" /p:DeployOnBuild=true /p:WebPublishMethod=Package /p:PackageAsSingleFile=true /p:SkipInvalidConfigurations=true /p:OutputPath=./publish
+        run: msbuild ProductCatalogApp.slnx /p:Configuration=Release /p:Platform="Any CPU" /p:DeployOnBuild=true /p:WebPublishMethod=Package /p:PackageAsSingleFile=true /p:SkipInvalidConfigurations=true
       
       - name: Create deployment package
         run: |
-          Compress-Archive -Path ./ProductCatalog/publish/* -DestinationPath ./deployment-package.zip
+          Compress-Archive -Path ./ProductCatalog/bin/* -DestinationPath ./deployment-package.zip
         shell: pwsh
       
       - name: Upload deployment package
@@ -159,8 +161,10 @@ jobs:
       
       - name: Create release tag
         run: |
-          git config user.name "GitHub Actions"
-          git config user.email "actions@github.com"
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
           TAG="v$(date +'%Y%m%d-%H%M%S')"
           git tag -a $TAG -m "Production release $TAG"
-          git push origin $TAG
+          git push https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git $TAG
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

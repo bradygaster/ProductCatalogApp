@@ -32,7 +32,9 @@ jobs:
       - name: Cache NuGet packages
         uses: actions/cache@v4
         with:
-          path: ~/.nuget/packages
+          path: |
+            packages
+            %USERPROFILE%\.nuget\packages
           key: ${{ runner.os }}-nuget-${{ hashFiles('**/packages.config') }}
           restore-keys: |
             ${{ runner.os }}-nuget-
@@ -49,7 +51,7 @@ jobs:
           if ($testProjects.Count -gt 0) {
             foreach ($testProject in $testProjects) {
               Write-Host "Running tests in $($testProject.FullName)"
-              dotnet test $testProject.FullName --configuration Release --no-build --verbosity normal
+              vstest.console.exe "$($testProject.Directory)\bin\Release\*.Tests.dll" /Logger:trx
             }
           } else {
             Write-Host "No test projects found - skipping test execution"
@@ -68,7 +70,7 @@ jobs:
 
   security-scan:
     name: Security Scan
-    runs-on: ubuntu-latest
+    runs-on: windows-latest
     permissions:
       security-events: write
       contents: read
