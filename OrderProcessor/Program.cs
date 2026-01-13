@@ -1,7 +1,10 @@
+using Azure.Messaging.ServiceBus;
+using Newtonsoft.Json;
 using System;
 using System.Configuration;
-using System.Messaging;
+using System.Text;
 using System.Threading;
+using System.Threading.Tasks;
 
 namespace OrderProcessor
 {
@@ -32,37 +35,51 @@ namespace OrderProcessor
 
     class Program
     {
-        private static string _queuePath;
+        private static string _connectionString;
+        private static string _queueName;
         private static bool _running = true;
+        private static ServiceBusClient _client;
+        private static ServiceBusProcessor _processor;
 
-        static void Main(string[] args)
+        static async Task Main(string[] args)
         {
             Console.WriteLine("===========================================");
             Console.WriteLine("  Product Catalog Order Processor");
+            Console.WriteLine("  (Azure Service Bus Edition)");
             Console.WriteLine("===========================================");
             Console.WriteLine();
 
-            // Get queue path from config or use default
-            _queuePath = ConfigurationManager.AppSettings["OrderQueuePath"] ?? @".\Private$\ProductCatalogOrders";
-            
-            Console.WriteLine($"Queue Path: {_queuePath}");
-            Console.WriteLine();
+            // Get Service Bus configuration
+            _connectionString = ConfigurationManager.AppSettings["ServiceBusConnectionString"];
+            _queueName = ConfigurationManager.AppSettings["ServiceBusQueueName"] ?? "product-catalog-orders";
 
-            // Ensure queue exists
-            if (!EnsureQueueExists())
+            if (string.IsNullOrEmpty(_connectionString))
             {
-                Console.WriteLine("Failed to access or create queue. Press any key to exit.");
+                Console.ForegroundColor = ConsoleColor.Red;
+                Console.WriteLine("ERROR: ServiceBusConnectionString is not configured in App.config");
+                Console.ResetColor();
+                Console.WriteLine("Press any key to exit.");
                 Console.ReadKey();
                 return;
             }
 
-            Console.WriteLine("Queue is ready. Waiting for orders...");
+            Console.WriteLine($"Queue Name: {_queueName}");
+            Console.WriteLine();
+
+            // Initialize Service Bus client
+            if (!await InitializeServiceBusAsync())
+            {
+                Console.WriteLine("Failed to initialize Service Bus. Press any key to exit.");
+                Console.ReadKey();
+                return;
+            }
+
+            Console.WriteLine("Service Bus connected. Waiting for orders...");
             Console.WriteLine("Press 'Q' to quit");
             Console.WriteLine();
 
-            // Start processing in background thread
-            Thread processingThread = new Thread(ProcessOrders);
-            processingThread.Start();
+            // Start processing
+            await _processor.StartProcessingAsync();
 
             // Wait for quit command
             while (_running)
@@ -76,71 +93,100 @@ namespace OrderProcessor
                         _running = false;
                     }
                 }
-                Thread.Sleep(100);
+                await Task.Delay(100);
             }
 
-            // Wait for processing thread to finish
-            processingThread.Join(5000);
+            // Stop processing and cleanup
+            await _processor.StopProcessingAsync();
+            await _processor.DisposeAsync();
+            await _client.DisposeAsync();
+            
             Console.WriteLine("Processor stopped.");
         }
 
-        private static bool EnsureQueueExists()
+        private static async Task<bool> InitializeServiceBusAsync()
         {
             try
             {
-                if (!MessageQueue.Exists(_queuePath))
+                _client = new ServiceBusClient(_connectionString);
+                
+                // Create processor with options
+                var options = new ServiceBusProcessorOptions
                 {
-                    Console.WriteLine($"Queue does not exist. Creating queue: {_queuePath}");
-                    MessageQueue.Create(_queuePath);
-                    Console.WriteLine("Queue created successfully.");
-                }
-                else
-                {
-                    Console.WriteLine("Queue exists.");
-                }
+                    MaxConcurrentCalls = 1,
+                    AutoCompleteMessages = false,
+                    MaxAutoLockRenewalDuration = TimeSpan.FromMinutes(5)
+                };
+
+                _processor = _client.CreateProcessor(_queueName, options);
+                
+                // Configure event handlers
+                _processor.ProcessMessageAsync += MessageHandler;
+                _processor.ProcessErrorAsync += ErrorHandler;
+                
+                Console.WriteLine("Service Bus client initialized successfully.");
                 return true;
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Error with queue: {ex.Message}");
+                Console.ForegroundColor = ConsoleColor.Red;
+                Console.WriteLine($"Error initializing Service Bus: {ex.Message}");
+                Console.ResetColor();
                 return false;
             }
         }
 
-        private static void ProcessOrders()
+        private static async Task MessageHandler(ProcessMessageEventArgs args)
         {
-            using (MessageQueue queue = new MessageQueue(_queuePath))
+            try
             {
-                queue.Formatter = new XmlMessageFormatter(new Type[] { typeof(Order) });
-
-                while (_running)
-                {
-                    try
-                    {
-                        // Try to receive message with 2 second timeout
-                        Message message = queue.Receive(TimeSpan.FromSeconds(2));
-                        Order order = (Order)message.Body;
-
-                        ProcessOrder(order);
-                    }
-                    catch (MessageQueueException ex) when (ex.MessageQueueErrorCode == MessageQueueErrorCode.IOTimeout)
-                    {
-                        // No message available - this is normal, just continue
-                        continue;
-                    }
-                    catch (Exception ex)
-                    {
-                        Console.WriteLine($"[ERROR] Failed to receive/process message: {ex.Message}");
-                    }
-                }
+                // Get message body
+                string messageBody = Encoding.UTF8.GetString(args.Message.Body);
+                
+                // Deserialize order
+                Order order = JsonConvert.DeserializeObject<Order>(messageBody);
+                
+                // Process the order
+                ProcessOrder(order);
+                
+                // Complete the message
+                await args.CompleteMessageAsync(args.Message);
             }
+            catch (JsonException ex)
+            {
+                Console.ForegroundColor = ConsoleColor.Red;
+                Console.WriteLine($"[ERROR] Failed to deserialize message: {ex.Message}");
+                Console.ResetColor();
+                
+                // Dead letter the message if it can't be deserialized
+                await args.DeadLetterMessageAsync(args.Message, "DeserializationError", ex.Message);
+            }
+            catch (Exception ex)
+            {
+                Console.ForegroundColor = ConsoleColor.Red;
+                Console.WriteLine($"[ERROR] Failed to process message: {ex.Message}");
+                Console.ResetColor();
+                
+                // Abandon the message so it can be retried
+                await args.AbandonMessageAsync(args.Message);
+            }
+        }
+
+        private static Task ErrorHandler(ProcessErrorEventArgs args)
+        {
+            Console.ForegroundColor = ConsoleColor.Red;
+            Console.WriteLine($"[ERROR] Message handler error: {args.Exception.Message}");
+            Console.WriteLine($"  Entity Path: {args.EntityPath}");
+            Console.WriteLine($"  Error Source: {args.ErrorSource}");
+            Console.ResetColor();
+            return Task.CompletedTask;
         }
 
         private static void ProcessOrder(Order order)
         {
-            Console.WriteLine("??????????????????????????????????????????????????????????????????");
+            Console.WriteLine("=======================================");
             Console.WriteLine($"  NEW ORDER RECEIVED: {order.OrderId}");
-            Console.WriteLine("??????????????????????????????????????????????????????????????????");
+            Console.WriteLine("=======================================");
             Console.WriteLine();
             
             Console.WriteLine($"Order Date:    {order.OrderDate:yyyy-MM-dd HH:mm:ss}");
@@ -148,15 +194,15 @@ namespace OrderProcessor
             Console.WriteLine();
             
             Console.WriteLine("Order Items:");
-            Console.WriteLine("?????????????????????????????????????????????????????????????????");
+            Console.WriteLine("---------------------------------------");
             
             foreach (var item in order.Items)
             {
-                Console.WriteLine($"  • {item.ProductName} (SKU: {item.SKU})");
+                Console.WriteLine($"  * {item.ProductName} (SKU: {item.SKU})");
                 Console.WriteLine($"    Quantity: {item.Quantity} x ${item.Price:N2} = ${item.Subtotal:N2}");
             }
             
-            Console.WriteLine("?????????????????????????????????????????????????????????????????");
+            Console.WriteLine("---------------------------------------");
             Console.WriteLine($"Subtotal:      ${order.Subtotal:N2}");
             Console.WriteLine($"Tax:           ${order.Tax:N2}");
             Console.WriteLine($"Shipping:      ${order.Shipping:N2}");
@@ -172,7 +218,7 @@ namespace OrderProcessor
             SimulateProcessingStep("Sending confirmation email", 500);
             
             Console.ForegroundColor = ConsoleColor.Green;
-            Console.WriteLine($"? Order {order.OrderId} processed successfully!");
+            Console.WriteLine($"[SUCCESS] Order {order.OrderId} processed successfully!");
             Console.ResetColor();
             Console.WriteLine();
             Console.WriteLine();
