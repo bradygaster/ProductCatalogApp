@@ -26,7 +26,7 @@ Azure Service Principal credentials in JSON format.
      --name "ProductCatalogApp-GitHub-Actions" \
      --role contributor \
      --scopes /subscriptions/{subscription-id}/resourceGroups/{resource-group} \
-     --sdk-auth
+     --json-auth
    ```
 
 2. Copy the JSON output and save it as the `AZURE_CREDENTIALS` secret in GitHub.

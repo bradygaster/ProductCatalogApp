@@ -42,10 +42,10 @@ jobs:
             ${{ runner.os }}-nuget-
 
       - name: Restore NuGet packages
-        run: nuget restore ProductCatalogApp.slnx
+        run: nuget restore ProductServiceLibrary/ProductServiceLibrary.csproj ProductCatalog/ProductCatalog.csproj
 
       - name: Build solution
-        run: msbuild ProductCatalogApp.slnx /p:Configuration=Release /p:Platform="Any CPU" /m
+        run: msbuild ProductServiceLibrary/ProductServiceLibrary.csproj ProductCatalog/ProductCatalog.csproj /p:Configuration=Release /p:Platform="Any CPU" /m
 
       - name: Upload build artifacts
         uses: actions/upload-artifact@v4
@@ -82,10 +82,10 @@ jobs:
             ${{ runner.os }}-nuget-
 
       - name: Restore NuGet packages
-        run: nuget restore ProductCatalogApp.slnx
+        run: nuget restore ProductServiceLibrary/ProductServiceLibrary.csproj ProductCatalog/ProductCatalog.csproj
 
       - name: Build solution
-        run: msbuild ProductCatalogApp.slnx /p:Configuration=Release /p:Platform="Any CPU" /m
+        run: msbuild ProductServiceLibrary/ProductServiceLibrary.csproj ProductCatalog/ProductCatalog.csproj /p:Configuration=Release /p:Platform="Any CPU" /m
 
       - name: Run tests
         run: |
@@ -118,11 +118,11 @@ jobs:
         uses: microsoft/setup-msbuild@v2
 
       - name: Restore NuGet packages
-        run: nuget restore ProductCatalogApp.slnx
+        run: nuget restore ProductServiceLibrary/ProductServiceLibrary.csproj ProductCatalog/ProductCatalog.csproj
 
       - name: Build solution for CodeQL
         run: >
-          msbuild ProductCatalogApp.slnx /p:Configuration=Release
+          msbuild ProductServiceLibrary/ProductServiceLibrary.csproj ProductCatalog/ProductCatalog.csproj /p:Configuration=Release
           /p:Platform="Any CPU" /m /p:UseSharedCompilation=false
 
       - name: Perform CodeQL Analysis

@@ -36,8 +36,8 @@ The production deployment uses Azure deployment slots with a blue-green deployme
    az webapp deployment slot swap \
      --name productcatalog-prod \
      --resource-group <resource-group> \
-     --slot production \
-     --target-slot blue
+     --slot blue \
+     --target-slot production
    ```
 
 3. Verify the rollback:
