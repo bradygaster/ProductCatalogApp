@@ -1,0 +1,420 @@
+{
+  "assessmentVersion": "1.0",
+  "assessmentDate": "2026-01-13T05:00:00Z",
+  "repository": {
+    "name": "ProductCatalogApp",
+    "owner": "bradygaster",
+    "url": "https://github.com/bradygaster/ProductCatalogApp"
+  },
+  "currentState": {
+    "framework": {
+      "type": ".NET Framework",
+      "version": "4.8.1",
+      "releaseDate": "2022-08-09",
+      "endOfSupport": "TBD (follows Windows lifecycle)",
+      "isLegacy": true
+    },
+    "projects": [
+      {
+        "name": "ProductCatalog",
+        "type": "ASP.NET MVC Web Application",
+        "framework": ".NET Framework 4.8.1",
+        "projectFormat": "Legacy (packages.config)",
+        "targetPlatform": "Windows-only (IIS)",
+        "uiFramework": "ASP.NET MVC 5.2.9",
+        "keyDependencies": [
+          "Microsoft.AspNet.Mvc 5.2.9",
+          "Microsoft.AspNet.WebPages 3.2.9",
+          "Newtonsoft.Json 13.0.3",
+          "Bootstrap 5.2.3",
+          "jQuery 3.7.0",
+          "System.Messaging (MSMQ)"
+        ],
+        "legacyPatterns": [
+          "WCF client for service communication",
+          "MSMQ for message queuing",
+          "Session state for cart management",
+          "Synchronous controllers",
+          "Global.asax for application startup"
+        ]
+      },
+      {
+        "name": "ProductServiceLibrary",
+        "type": "WCF Service Library",
+        "framework": ".NET Framework 4.8.1",
+        "projectFormat": "Legacy",
+        "targetPlatform": "Windows-only",
+        "serviceType": "WCF SOAP Service",
+        "legacyPatterns": [
+          "WCF ServiceContract",
+          "SOAP-based communication",
+          "In-memory data storage (static collections)",
+          "Lock-based concurrency control"
+        ]
+      },
+      {
+        "name": "OrderProcessor",
+        "type": "Console Application",
+        "framework": ".NET Framework 4.8.1",
+        "projectFormat": "Legacy",
+        "targetPlatform": "Windows-only",
+        "legacyPatterns": [
+          "MSMQ message queue consumer",
+          "Console-based long-running process",
+          "Polling-based message processing",
+          "No dependency injection"
+        ],
+        "note": "Not part of current solution file"
+      }
+    ],
+    "architecture": {
+      "style": "Layered monolithic with service-oriented components",
+      "components": [
+        {
+          "name": "ProductCatalog (Web Frontend)",
+          "role": "User interface and cart management",
+          "technology": "ASP.NET MVC 5",
+          "dependencies": ["ProductServiceLibrary via WCF", "MSMQ for order submission"]
+        },
+        {
+          "name": "ProductServiceLibrary",
+          "role": "Product catalog business logic and data access",
+          "technology": "WCF Service",
+          "dependencies": ["In-memory data store"]
+        },
+        {
+          "name": "OrderProcessor",
+          "role": "Background order processing",
+          "technology": "Console Application",
+          "dependencies": ["MSMQ message queue"]
+        }
+      ],
+      "integrationPatterns": [
+        "WCF SOAP services for synchronous product queries",
+        "MSMQ for asynchronous order processing"
+      ],
+      "dataStorage": "In-memory (no persistence)",
+      "stateManagement": "Session-based (ASP.NET Session)"
+    },
+    "windowsDependencies": [
+      {
+        "name": "IIS (Internet Information Services)",
+        "purpose": "Web application hosting",
+        "criticality": "High"
+      },
+      {
+        "name": "MSMQ (Microsoft Message Queuing)",
+        "purpose": "Order message queuing",
+        "criticality": "High",
+        "alternativesNeeded": true
+      },
+      {
+        "name": "Windows Server",
+        "purpose": "Runtime platform",
+        "criticality": "High"
+      }
+    ]
+  },
+  "targetState": {
+    "framework": {
+      "type": ".NET",
+      "version": "10.0",
+      "releaseDate": "2025-11-18",
+      "endOfSupport": "2028-11-14",
+      "isModern": true,
+      "benefits": [
+        "Cross-platform support (Linux containers)",
+        "Improved performance",
+        "Modern C# 13 language features",
+        "Native cloud support",
+        "Better dependency injection and configuration"
+      ]
+    },
+    "deployment": {
+      "platform": "Azure Container Apps",
+      "benefits": [
+        "Serverless container orchestration",
+        "Automatic scaling",
+        "Built-in load balancing",
+        "Simplified deployment and management",
+        "Pay-per-use pricing model",
+        "Integrated monitoring and logging"
+      ]
+    },
+    "recommendedArchitecture": {
+      "style": "Microservices with event-driven patterns",
+      "components": [
+        {
+          "name": "ProductCatalog.Web",
+          "type": "ASP.NET Core Web App (MVC/Razor Pages)",
+          "containerized": true,
+          "technology": "ASP.NET Core 10.0",
+          "replacements": {
+            "sessionState": "Distributed cache (Redis/Azure Cache)",
+            "wcfClient": "HTTP client with REST API or gRPC"
+          }
+        },
+        {
+          "name": "ProductCatalog.Api",
+          "type": "ASP.NET Core Web API",
+          "containerized": true,
+          "technology": "ASP.NET Core 10.0",
+          "replacements": {
+            "wcfService": "REST API or gRPC",
+            "inMemoryStorage": "Azure Cosmos DB, Azure SQL, or PostgreSQL"
+          }
+        },
+        {
+          "name": "OrderProcessor.Worker",
+          "type": "Worker Service / Background Service",
+          "containerized": true,
+          "technology": ".NET 10 Worker Service",
+          "replacements": {
+            "msmq": "Azure Service Bus, Azure Queue Storage, or Azure Event Grid",
+            "consoleApp": "BackgroundService with IHostedService"
+          }
+        }
+      ]
+    }
+  },
+  "migrationComplexity": {
+    "overallScore": 7,
+    "scale": "1-10 (1=trivial, 10=extremely complex)",
+    "breakdown": {
+      "frameworkMigration": {
+        "score": 6,
+        "factors": [
+          ".NET Framework to .NET 10 migration required",
+          "ASP.NET MVC to ASP.NET Core MVC",
+          "Project file format modernization",
+          "Package references update"
+        ]
+      },
+      "architectureChanges": {
+        "score": 8,
+        "factors": [
+          "WCF to REST API/gRPC conversion (high impact)",
+          "MSMQ to Azure Service Bus migration (high impact)",
+          "Session state to distributed cache",
+          "In-memory storage to persistent database",
+          "Console app to Worker Service"
+        ]
+      },
+      "platformMigration": {
+        "score": 7,
+        "factors": [
+          "Windows-only to cross-platform",
+          "IIS to Kestrel web server",
+          "Containerization required",
+          "Infrastructure as Code for Azure resources"
+        ]
+      },
+      "codeModernization": {
+        "score": 5,
+        "factors": [
+          "Relatively small codebase (~17 C# files, 8 views)",
+          "Simple business logic",
+          "No complex Windows-specific APIs beyond MSMQ/WCF",
+          "Modern patterns already present (MVC, dependency injection concepts)"
+        ]
+      }
+    },
+    "estimatedEffort": {
+      "hours": "80-120",
+      "duration": "2-3 weeks",
+      "team": "1-2 developers"
+    }
+  },
+  "migrationPath": {
+    "approach": "Incremental modernization with phased deployment",
+    "phases": [
+      {
+        "phase": 1,
+        "name": "Foundation & Project Modernization",
+        "tasks": [
+          "Upgrade to .NET 10",
+          "Convert to SDK-style project files",
+          "Update package references",
+          "Modernize C# language features"
+        ],
+        "estimatedHours": "16-24"
+      },
+      {
+        "phase": 2,
+        "name": "Service Layer Migration",
+        "tasks": [
+          "Convert WCF service to ASP.NET Core Web API",
+          "Implement REST endpoints",
+          "Add data persistence (replace in-memory storage)",
+          "Update service contracts"
+        ],
+        "estimatedHours": "20-30"
+      },
+      {
+        "phase": 3,
+        "name": "Web Application Migration",
+        "tasks": [
+          "Migrate ASP.NET MVC to ASP.NET Core MVC",
+          "Replace WCF client with HttpClient",
+          "Implement distributed session/cache",
+          "Update views and frontend assets"
+        ],
+        "estimatedHours": "20-30"
+      },
+      {
+        "phase": 4,
+        "name": "Messaging & Background Processing",
+        "tasks": [
+          "Replace MSMQ with Azure Service Bus",
+          "Convert console app to Worker Service",
+          "Implement message handlers",
+          "Add retry and error handling"
+        ],
+        "estimatedHours": "16-24"
+      },
+      {
+        "phase": 5,
+        "name": "Containerization & Deployment",
+        "tasks": [
+          "Create Dockerfiles for all services",
+          "Setup Azure Container Apps",
+          "Configure infrastructure (Bicep/Terraform)",
+          "Setup CI/CD pipelines",
+          "Configure monitoring and logging"
+        ],
+        "estimatedHours": "12-16"
+      }
+    ]
+  },
+  "risks": [
+    {
+      "category": "Technical",
+      "risk": "WCF to REST API migration complexity",
+      "impact": "High",
+      "likelihood": "Medium",
+      "mitigation": "Use incremental migration; support both WCF and REST during transition"
+    },
+    {
+      "category": "Technical",
+      "risk": "MSMQ to Azure Service Bus behavioral differences",
+      "impact": "High",
+      "likelihood": "Medium",
+      "mitigation": "Thorough testing of message handling; implement proper dead-letter queue handling"
+    },
+    {
+      "category": "Data",
+      "risk": "In-memory data will be lost in container restarts",
+      "impact": "High",
+      "likelihood": "High",
+      "mitigation": "Implement persistent storage (Azure SQL, Cosmos DB, or PostgreSQL) early in migration"
+    },
+    {
+      "category": "Infrastructure",
+      "risk": "Azure Container Apps learning curve",
+      "impact": "Medium",
+      "likelihood": "Low",
+      "mitigation": "Use Azure documentation and examples; start with simple deployments"
+    },
+    {
+      "category": "Testing",
+      "risk": "No existing automated tests",
+      "impact": "Medium",
+      "likelihood": "High",
+      "mitigation": "Create integration tests during migration to validate functionality"
+    }
+  ],
+  "recommendations": [
+    {
+      "priority": "Critical",
+      "recommendation": "Add persistent data storage",
+      "rationale": "Current in-memory storage is not suitable for production or containerized environments. Data will be lost on application restarts."
+    },
+    {
+      "priority": "Critical",
+      "recommendation": "Replace MSMQ with Azure Service Bus",
+      "rationale": "MSMQ is Windows-only and not available in containers. Azure Service Bus provides similar functionality with better cloud integration."
+    },
+    {
+      "priority": "Critical",
+      "recommendation": "Replace WCF with REST API or gRPC",
+      "rationale": "WCF is not supported in .NET Core/.NET 5+. REST APIs are industry standard and better suited for modern architectures."
+    },
+    {
+      "priority": "High",
+      "recommendation": "Implement distributed session management",
+      "rationale": "Current session state won't work across multiple container instances. Use Redis or Azure Cache for Redis."
+    },
+    {
+      "priority": "High",
+      "recommendation": "Add automated tests",
+      "rationale": "No existing tests make migration risky. Add integration and unit tests to ensure functionality during migration."
+    },
+    {
+      "priority": "Medium",
+      "recommendation": "Implement proper logging and monitoring",
+      "rationale": "Add Application Insights or similar for observability in container environment."
+    },
+    {
+      "priority": "Medium",
+      "recommendation": "Add health checks",
+      "rationale": "Container orchestration platforms rely on health checks for proper scaling and availability."
+    },
+    {
+      "priority": "Low",
+      "recommendation": "Consider API versioning strategy",
+      "rationale": "Plan for future API evolution during the migration to REST."
+    }
+  ],
+  "azureServices": {
+    "required": [
+      {
+        "service": "Azure Container Apps",
+        "purpose": "Host all three applications",
+        "estimatedCost": "Low-Medium (serverless pricing)"
+      },
+      {
+        "service": "Azure Service Bus",
+        "purpose": "Replace MSMQ for message queuing",
+        "estimatedCost": "Low (Standard tier sufficient)"
+      },
+      {
+        "service": "Azure Container Registry",
+        "purpose": "Store container images",
+        "estimatedCost": "Low (Basic tier sufficient)"
+      }
+    ],
+    "recommended": [
+      {
+        "service": "Azure SQL Database or Azure Cosmos DB",
+        "purpose": "Persistent product catalog storage",
+        "estimatedCost": "Low-Medium"
+      },
+      {
+        "service": "Azure Cache for Redis",
+        "purpose": "Distributed session and caching",
+        "estimatedCost": "Low (Basic tier sufficient)"
+      },
+      {
+        "service": "Azure Application Insights",
+        "purpose": "Application monitoring and logging",
+        "estimatedCost": "Low (pay-per-use)"
+      },
+      {
+        "service": "Azure Key Vault",
+        "purpose": "Secure storage for connection strings and secrets",
+        "estimatedCost": "Very Low"
+      }
+    ]
+  },
+  "successCriteria": [
+    "All applications successfully migrated to .NET 10",
+    "Applications containerized and running on Azure Container Apps",
+    "MSMQ replaced with Azure Service Bus with equivalent functionality",
+    "WCF replaced with REST API with equivalent functionality",
+    "Persistent storage implemented for product catalog",
+    "Session management works across multiple instances",
+    "All existing functionality preserved",
+    "Automated deployment pipeline established",
+    "Monitoring and logging operational"
+  ]
+}
