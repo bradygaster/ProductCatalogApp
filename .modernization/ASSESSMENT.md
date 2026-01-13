@@ -1005,10 +1005,10 @@ Azure services (Service Bus, Redis, Container Apps) could exceed budget if not m
 ### A. Useful Resources
 
 **Microsoft Documentation:**
-- [Migrate from ASP.NET to ASP.NET Core](https://docs.microsoft.com/aspnet/core/migration/proper-to-2x/)
+- [Migrate from ASP.NET to ASP.NET Core](https://learn.microsoft.com/aspnet/core/migration/proper-to-2x/)
 - [.NET Upgrade Assistant](https://dotnet.microsoft.com/platform/upgrade-assistant)
-- [Azure Container Apps Documentation](https://docs.microsoft.com/azure/container-apps/)
-- [Azure Service Bus Documentation](https://docs.microsoft.com/azure/service-bus-messaging/)
+- [Azure Container Apps Documentation](https://learn.microsoft.com/azure/container-apps/)
+- [Azure Service Bus Documentation](https://learn.microsoft.com/azure/service-bus-messaging/)
 
 **Migration Tools:**
 - .NET Upgrade Assistant CLI
