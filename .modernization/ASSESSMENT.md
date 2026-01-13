@@ -450,10 +450,10 @@ This application is built on technologies that are either deprecated or not suit
 
 ## Additional Resources
 
-- [Migrate from ASP.NET to ASP.NET Core](https://docs.microsoft.com/aspnet/core/migration/proper-to-2x)
-- [Azure Container Apps documentation](https://docs.microsoft.com/azure/container-apps)
-- [Azure Service Bus documentation](https://docs.microsoft.com/azure/service-bus-messaging)
-- [gRPC for .NET documentation](https://docs.microsoft.com/aspnet/core/grpc)
+- [Migrate from ASP.NET to ASP.NET Core](https://learn.microsoft.com/aspnet/core/migration/proper-to-2x)
+- [Azure Container Apps documentation](https://learn.microsoft.com/azure/container-apps)
+- [Azure Service Bus documentation](https://learn.microsoft.com/azure/service-bus-messaging)
+- [gRPC for .NET documentation](https://learn.microsoft.com/aspnet/core/grpc)
 - [CoreWCF GitHub repository](https://github.com/CoreWCF/CoreWCF)
 
 ---

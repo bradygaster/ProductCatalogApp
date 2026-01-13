@@ -3,7 +3,7 @@
   "assessed_at": "2026-01-13T01:42:00.000000",
   "repo_path": "/home/runner/work/ProductCatalogApp/ProductCatalogApp",
   "complexity_score": 7,
-  "target_framework": ".NET 10",
+  "target_framework": "net10.0",
   "target_platform": "Azure Container Apps",
   "patterns": {
     "legacy_aspnet_mvc": {
@@ -128,7 +128,7 @@
       "name": "OrderProcessor",
       "type": "Console Application",
       "path": "OrderProcessor",
-      "target_framework": "unknown",
+      "target_framework": "net481",
       "migration_path": "Azure Functions or Azure Container Apps background worker",
       "complexity": "medium",
       "key_dependencies": [
