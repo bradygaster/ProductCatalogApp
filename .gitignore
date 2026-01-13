@@ -363,3 +363,6 @@ MigrationBackup/
 FodyWeavers.xsd*.old
 App_Start/
 packages.config
+ProductCatalog/Content/
+ProductCatalog/Scripts/
+ProductCatalog/Connected Services/
