@@ -1,0 +1,468 @@
+{
+  "assessment": {
+    "timestamp": "2026-01-13T04:31:14.609Z",
+    "repository": "bradygaster/ProductCatalogApp",
+    "branch": "copilot/modernize-assess-product-catalog-app",
+    "assessor": "GitHub Copilot Modernization Agent",
+    "targetFramework": ".NET 10",
+    "targetDeployment": "Azure Container Apps"
+  },
+  "currentState": {
+    "framework": {
+      "name": ".NET Framework",
+      "version": "4.8.1",
+      "projectType": "ASP.NET MVC 5",
+      "projectFormat": "legacy-csproj"
+    },
+    "projects": [
+      {
+        "name": "ProductCatalog",
+        "type": "ASP.NET MVC 5 Web Application",
+        "framework": "net481",
+        "location": "ProductCatalog/ProductCatalog.csproj",
+        "description": "Main web application with MVC controllers, Razor views, and WCF service client"
+      },
+      {
+        "name": "ProductServiceLibrary",
+        "type": "WCF Service Library",
+        "framework": "net481",
+        "location": "ProductServiceLibrary/ProductServiceLibrary.csproj",
+        "description": "WCF service library for product data access"
+      },
+      {
+        "name": "OrderProcessor",
+        "type": "Console Application",
+        "framework": "net481",
+        "location": "OrderProcessor/",
+        "description": "Background order processor using MSMQ (no project file found)"
+      }
+    ],
+    "dependencies": {
+      "webFramework": {
+        "name": "ASP.NET MVC",
+        "version": "5.2.9",
+        "packages": [
+          "Microsoft.AspNet.Mvc@5.2.9",
+          "Microsoft.AspNet.Razor@3.2.9",
+          "Microsoft.AspNet.WebPages@3.2.9"
+        ]
+      },
+      "nugetPackages": [
+        {
+          "name": "bootstrap",
+          "version": "5.2.3",
+          "migrationStatus": "compatible"
+        },
+        {
+          "name": "jQuery",
+          "version": "3.7.0",
+          "migrationStatus": "compatible"
+        },
+        {
+          "name": "Newtonsoft.Json",
+          "version": "13.0.3",
+          "migrationStatus": "compatible"
+        },
+        {
+          "name": "Microsoft.AspNet.Web.Optimization",
+          "version": "1.1.3",
+          "migrationStatus": "requires-replacement"
+        },
+        {
+          "name": "WebGrease",
+          "version": "1.6.0",
+          "migrationStatus": "requires-replacement"
+        },
+        {
+          "name": "Antlr",
+          "version": "3.5.0.2",
+          "migrationStatus": "requires-replacement"
+        }
+      ],
+      "systemReferences": [
+        "System.Messaging",
+        "System.ServiceModel",
+        "System.Web",
+        "System.Web.Mvc"
+      ]
+    }
+  },
+  "legacyPatterns": [
+    {
+      "category": "Communication",
+      "pattern": "WCF Services",
+      "severity": "high",
+      "description": "ProductServiceLibrary uses WCF (Windows Communication Foundation) for service communication",
+      "impact": "WCF is not supported in .NET Core/.NET 5+",
+      "files": [
+        "ProductServiceLibrary/ProductService.cs",
+        "ProductServiceLibrary/IProductService.cs",
+        "ProductCatalog/Connected Services/ProductServiceReference/"
+      ],
+      "recommendation": "Replace with gRPC, REST API (ASP.NET Core Web API), or HTTP client calls"
+    },
+    {
+      "category": "Messaging",
+      "pattern": "MSMQ (Message Queuing)",
+      "severity": "high",
+      "description": "Uses System.Messaging and MSMQ for order processing",
+      "impact": "System.Messaging is Windows-only and not supported in .NET Core/.NET 5+",
+      "files": [
+        "ProductCatalog/Services/OrderQueueService.cs",
+        "OrderProcessor/Program.cs"
+      ],
+      "recommendation": "Replace with Azure Service Bus, Azure Storage Queues, RabbitMQ, or other cloud-native messaging solutions"
+    },
+    {
+      "category": "Web Framework",
+      "pattern": "ASP.NET MVC 5",
+      "severity": "high",
+      "description": "Uses legacy ASP.NET MVC 5 with System.Web dependencies",
+      "impact": "ASP.NET MVC 5 must be migrated to ASP.NET Core MVC",
+      "files": [
+        "ProductCatalog/Controllers/",
+        "ProductCatalog/Views/",
+        "ProductCatalog/Global.asax"
+      ],
+      "recommendation": "Migrate to ASP.NET Core MVC with minimal routing and controller changes"
+    },
+    {
+      "category": "Configuration",
+      "pattern": "Web.config",
+      "severity": "medium",
+      "description": "Uses XML-based Web.config for configuration",
+      "impact": "Need to migrate to appsettings.json and modern configuration system",
+      "files": [
+        "ProductCatalog/Web.config",
+        "ProductServiceLibrary/App.config",
+        "OrderProcessor/App.config"
+      ],
+      "recommendation": "Convert to appsettings.json with IConfiguration"
+    },
+    {
+      "category": "State Management",
+      "pattern": "Session State",
+      "severity": "medium",
+      "description": "Uses in-process session state for shopping cart",
+      "impact": "Session state needs to be replaced with distributed cache or alternative for containerized environments",
+      "files": [
+        "ProductCatalog/Controllers/HomeController.cs"
+      ],
+      "recommendation": "Use Redis cache, distributed session state, or client-side storage"
+    },
+    {
+      "category": "Project Format",
+      "pattern": "Legacy .csproj format",
+      "severity": "medium",
+      "description": "Uses old-style .csproj with packages.config",
+      "impact": "Requires conversion to SDK-style project format",
+      "files": [
+        "ProductCatalog/ProductCatalog.csproj",
+        "ProductServiceLibrary/ProductServiceLibrary.csproj"
+      ],
+      "recommendation": "Convert to SDK-style projects with PackageReference"
+    },
+    {
+      "category": "Bundling",
+      "pattern": "System.Web.Optimization",
+      "severity": "low",
+      "description": "Uses legacy bundling and minification",
+      "impact": "Not available in ASP.NET Core",
+      "files": [
+        "ProductCatalog/App_Start/BundleConfig.cs"
+      ],
+      "recommendation": "Use WebOptimizer, Webpack, or Vite for bundling"
+    }
+  ],
+  "containerization": {
+    "readiness": "not-containerized",
+    "blockers": [
+      {
+        "issue": "MSMQ dependency",
+        "description": "MSMQ is Windows-only and not suitable for containers",
+        "resolution": "Replace with Azure Service Bus or other cloud messaging"
+      },
+      {
+        "issue": "WCF Services",
+        "description": "WCF requires Windows and is not container-friendly",
+        "resolution": "Replace with REST APIs or gRPC"
+      },
+      {
+        "issue": "In-process session state",
+        "description": "Session state won't work across container instances",
+        "resolution": "Use distributed cache (Redis)"
+      }
+    ],
+    "recommendations": [
+      "Use multi-stage Dockerfile for efficient builds",
+      "Implement health checks for container orchestration",
+      "Use environment variables for configuration",
+      "Implement proper logging for container environments"
+    ]
+  },
+  "azureContainerApps": {
+    "suitability": "good-candidate",
+    "requirements": [
+      "Replace MSMQ with Azure Service Bus",
+      "Replace WCF with REST APIs",
+      "Implement distributed session state with Azure Cache for Redis",
+      "Configure application insights for monitoring",
+      "Set up managed identity for Azure service access"
+    ],
+    "architecture": {
+      "webApp": {
+        "name": "product-catalog-web",
+        "type": "ASP.NET Core MVC",
+        "scaling": "HTTP-based autoscaling",
+        "ingress": "external"
+      },
+      "apiService": {
+        "name": "product-api",
+        "type": "ASP.NET Core Web API",
+        "scaling": "CPU/Memory-based",
+        "ingress": "internal"
+      },
+      "orderProcessor": {
+        "name": "order-processor",
+        "type": "Background Worker",
+        "scaling": "Queue-based (KEDA)",
+        "ingress": "none"
+      }
+    }
+  },
+  "complexity": {
+    "score": 7,
+    "scale": "1-10 (1=trivial, 10=extremely complex)",
+    "factors": {
+      "frameworkMigration": {
+        "score": 8,
+        "description": "Major framework migration from .NET Framework 4.8.1 to .NET 10"
+      },
+      "wcfReplacement": {
+        "score": 7,
+        "description": "WCF services need complete replacement with modern communication patterns"
+      },
+      "msmqReplacement": {
+        "score": 7,
+        "description": "MSMQ needs replacement with cloud-native messaging"
+      },
+      "sessionState": {
+        "score": 5,
+        "description": "Session state migration to distributed cache"
+      },
+      "viewsAndUI": {
+        "score": 4,
+        "description": "Razor views need minimal changes, mostly layout updates"
+      },
+      "codeSize": {
+        "score": 3,
+        "description": "Relatively small codebase, manageable complexity"
+      }
+    },
+    "justification": "Score of 7 reflects substantial architectural changes required (WCF to REST, MSMQ to Azure Service Bus, session state) combined with major framework migration. However, the small codebase size and straightforward business logic keep it from being a 9-10. Main challenges are infrastructure and communication pattern changes, not code volume."
+  },
+  "estimatedEffort": {
+    "phases": [
+      {
+        "phase": "Planning & Architecture",
+        "duration": "3-5 days",
+        "tasks": [
+          "Design new service architecture (REST API vs gRPC)",
+          "Plan Azure Service Bus integration",
+          "Design distributed caching strategy",
+          "Plan container deployment architecture"
+        ]
+      },
+      {
+        "phase": "Framework Migration",
+        "duration": "5-8 days",
+        "tasks": [
+          "Convert projects to SDK-style format",
+          "Migrate to .NET 10",
+          "Update NuGet packages",
+          "Migrate configuration system",
+          "Update dependency injection"
+        ]
+      },
+      {
+        "phase": "Service Modernization",
+        "duration": "8-12 days",
+        "tasks": [
+          "Replace WCF with REST API",
+          "Implement new API endpoints",
+          "Update client code to use HttpClient",
+          "Replace MSMQ with Azure Service Bus",
+          "Update order processing logic",
+          "Implement distributed session with Redis"
+        ]
+      },
+      {
+        "phase": "Containerization",
+        "duration": "3-5 days",
+        "tasks": [
+          "Create Dockerfiles for all components",
+          "Set up multi-stage builds",
+          "Configure health checks",
+          "Test local container deployment"
+        ]
+      },
+      {
+        "phase": "Azure Deployment",
+        "duration": "5-7 days",
+        "tasks": [
+          "Set up Azure Container Apps environment",
+          "Configure Azure Service Bus",
+          "Configure Azure Cache for Redis",
+          "Set up Application Insights",
+          "Configure managed identities",
+          "Implement CI/CD pipeline"
+        ]
+      },
+      {
+        "phase": "Testing & Validation",
+        "duration": "5-7 days",
+        "tasks": [
+          "Integration testing",
+          "Performance testing",
+          "Load testing with autoscaling",
+          "Security testing",
+          "Documentation updates"
+        ]
+      }
+    ],
+    "totalDuration": "29-44 days",
+    "team": "1-2 developers with Azure and .NET expertise"
+  },
+  "migrationPath": {
+    "strategy": "Incremental modernization with parallel services",
+    "steps": [
+      {
+        "step": 1,
+        "name": "Project Structure Modernization",
+        "description": "Convert to SDK-style projects and upgrade to .NET 10",
+        "priority": "critical",
+        "dependencies": []
+      },
+      {
+        "step": 2,
+        "name": "Replace WCF with REST API",
+        "description": "Create ASP.NET Core Web API to replace ProductServiceLibrary",
+        "priority": "critical",
+        "dependencies": [1]
+      },
+      {
+        "step": 3,
+        "name": "Migrate Web Application",
+        "description": "Convert ASP.NET MVC 5 to ASP.NET Core MVC",
+        "priority": "critical",
+        "dependencies": [1, 2]
+      },
+      {
+        "step": 4,
+        "name": "Replace MSMQ with Azure Service Bus",
+        "description": "Implement Azure Service Bus for order processing",
+        "priority": "critical",
+        "dependencies": [1]
+      },
+      {
+        "step": 5,
+        "name": "Implement Distributed Session",
+        "description": "Add Azure Cache for Redis for session state",
+        "priority": "high",
+        "dependencies": [3]
+      },
+      {
+        "step": 6,
+        "name": "Modernize Order Processor",
+        "description": "Convert to .NET 10 background worker with Azure Service Bus",
+        "priority": "high",
+        "dependencies": [4]
+      },
+      {
+        "step": 7,
+        "name": "Containerization",
+        "description": "Create Dockerfiles and test local container deployment",
+        "priority": "high",
+        "dependencies": [3, 6]
+      },
+      {
+        "step": 8,
+        "name": "Azure Container Apps Deployment",
+        "description": "Deploy to Azure Container Apps with supporting services",
+        "priority": "medium",
+        "dependencies": [7]
+      },
+      {
+        "step": 9,
+        "name": "Monitoring & Optimization",
+        "description": "Set up Application Insights and optimize performance",
+        "priority": "medium",
+        "dependencies": [8]
+      }
+    ]
+  },
+  "risks": [
+    {
+      "risk": "WCF to REST API migration complexity",
+      "severity": "high",
+      "mitigation": "Start with simple CRUD operations, thoroughly test, and use OpenAPI/Swagger for documentation"
+    },
+    {
+      "risk": "MSMQ to Azure Service Bus message compatibility",
+      "severity": "medium",
+      "mitigation": "Ensure message serialization compatibility, implement retry logic, and test with production-like data"
+    },
+    {
+      "risk": "Session state migration affecting user experience",
+      "severity": "medium",
+      "mitigation": "Implement gradual rollout with Redis session state, test thoroughly with shopping cart scenarios"
+    },
+    {
+      "risk": "Container deployment learning curve",
+      "severity": "low",
+      "mitigation": "Use Azure Container Apps documentation, start with simple deployments, leverage managed services"
+    }
+  ],
+  "recommendations": [
+    {
+      "priority": "critical",
+      "category": "Architecture",
+      "recommendation": "Adopt microservices-lite architecture with separate containers for web, API, and order processor"
+    },
+    {
+      "priority": "critical",
+      "category": "Messaging",
+      "recommendation": "Use Azure Service Bus Standard tier for reliable message delivery with topics and subscriptions"
+    },
+    {
+      "priority": "critical",
+      "category": "API Design",
+      "recommendation": "Use ASP.NET Core Web API with RESTful endpoints, OpenAPI/Swagger documentation"
+    },
+    {
+      "priority": "high",
+      "category": "Caching",
+      "recommendation": "Implement Azure Cache for Redis for distributed session state and application caching"
+    },
+    {
+      "priority": "high",
+      "category": "Security",
+      "recommendation": "Use managed identities for Azure service authentication, implement proper CORS policies"
+    },
+    {
+      "priority": "high",
+      "category": "Monitoring",
+      "recommendation": "Integrate Application Insights for comprehensive monitoring and distributed tracing"
+    },
+    {
+      "priority": "medium",
+      "category": "CI/CD",
+      "recommendation": "Set up GitHub Actions for automated build, test, and deployment to Azure Container Apps"
+    },
+    {
+      "priority": "medium",
+      "category": "Configuration",
+      "recommendation": "Use Azure App Configuration or Key Vault for centralized configuration management"
+    }
+  ]
+}
