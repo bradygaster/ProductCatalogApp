@@ -113,7 +113,7 @@
             <h1 class="display-4">Shopping Cart</h1>
             <nav aria-label="breadcrumb">
                 <ol class="breadcrumb">
-                    <li class="breadcrumb-item">@Html.ActionLink("Home", "Index", "Home")</li>
+                    <li class="breadcrumb-item"><a asp-controller="Home" asp-action="Index">Home</a></li>
                     <li class="breadcrumb-item active" aria-current="page">Cart</li>
                 </ol>
             </nav>
@@ -180,7 +180,7 @@
                                     </td>
                                     <td class="align-middle">
                                         <div class="quantity-control">
-                                            <form action="@Url.Action("UpdateQuantity", "Home")" method="post" style="display: inline;">
+                                            <form asp-action="UpdateQuantity" asp-controller="Home" method="post" style="display: inline;">
                                                 <input type="hidden" name="productId" value="@item.Product.Id" />
                                                 <input type="hidden" name="quantity" value="@(item.Quantity - 1)" />
                                                 <button type="submit" class="btn btn-sm btn-outline-secondary btn-quantity" @(item.Quantity <= 1 ? "disabled" : "")>
@@ -189,7 +189,7 @@
                                             </form>
                                             <input type="number" value="@item.Quantity" min="1" max="@item.Product.StockQuantity"
                                                    class="form-control quantity-input" readonly />
-                                            <form action="@Url.Action("UpdateQuantity", "Home")" method="post" style="display: inline;">
+                                            <form asp-action="UpdateQuantity" asp-controller="Home" method="post" style="display: inline;">
                                                 <input type="hidden" name="productId" value="@item.Product.Id" />
                                                 <input type="hidden" name="quantity" value="@(item.Quantity + 1)" />
                                                 <button type="submit" class="btn btn-sm btn-outline-secondary btn-quantity"
@@ -204,13 +204,12 @@
                                         <strong class="text-success">$@item.Subtotal.ToString("N2")</strong>
                                     </td>
                                     <td class="align-middle">
-                                        @using (Html.BeginForm("RemoveFromCart", "Home", FormMethod.Post))
-                                        {
+                                        <form asp-action="RemoveFromCart" asp-controller="Home" method="post">
                                             <input type="hidden" name="productId" value="@item.Product.Id" />
                                             <button type="submit" class="btn btn-sm btn-danger" onclick="return confirm('Are you sure you want to remove this item?');">
                                                 <i class="bi bi-trash"></i> Remove
                                             </button>
-                                        }
+                                        </form>
                                     </td>
                                 </tr>
                             }
@@ -219,13 +218,12 @@
                 </div>
 
                 <div class="mt-3">
-                    @using (Html.BeginForm("ClearCart", "Home", FormMethod.Post, new { @class = "d-inline" }))
-                    {
+                    <form asp-action="ClearCart" asp-controller="Home" method="post" class="d-inline">
                         <button type="submit" class="btn btn-outline-danger" onclick="return confirm('Are you sure you want to clear your entire cart?');">
                             <i class="bi bi-trash"></i> Clear Cart
                         </button>
-                    }
-                    @Html.ActionLink("Continue Shopping", "Index", "Home", null, new { @class = "btn btn-outline-primary" })
+                    </form>
+                    <a class="btn btn-outline-primary" asp-controller="Home" asp-action="Index">Continue Shopping</a>
                 </div>
             </div>
 
@@ -277,12 +275,11 @@
                     </div>
 
                     <div class="d-grid gap-2 mt-4">
-                        @using (Html.BeginForm("SubmitOrder", "Home", FormMethod.Post))
-                        {
+                        <form asp-action="SubmitOrder" asp-controller="Home" method="post">
                             <button type="submit" class="btn btn-success btn-lg">
                                 <i class="bi bi-credit-card"></i> Proceed to Checkout
                             </button>
-                        }
+                        </form>
                     </div>
 
                     <div class="mt-3 text-center">
@@ -306,7 +303,7 @@
                     <h2>Your cart is empty</h2>
                     <p class="lead text-muted">Looks like you haven't added any items to your cart yet.</p>
                     <div class="mt-4">
-                        @Html.ActionLink("Start Shopping", "Index", "Home", null, new { @class = "btn btn-primary btn-lg" })
+                        <a class="btn btn-primary btn-lg" asp-controller="Home" asp-action="Index">Start Shopping</a>
                     </div>
                 </div>
             </div>

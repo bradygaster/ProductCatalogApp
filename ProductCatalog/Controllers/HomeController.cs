@@ -1,16 +1,13 @@
-﻿using ProductCatalog.Models;
+﻿using Microsoft.AspNetCore.Mvc;
+using ProductCatalog.Models;
 using ProductCatalog.ProductServiceReference;
 using ProductCatalog.Services;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Web.Mvc;
 
 namespace ProductCatalog.Controllers
 {
     public class HomeController : Controller
     {
-        public ActionResult Index()
+        public IActionResult Index()
         {
             List<Product> products = new List<Product>();
 
@@ -30,7 +27,7 @@ namespace ProductCatalog.Controllers
         }
 
         [HttpPost]
-        public ActionResult AddToCart(int productId, int quantity = 1)
+        public IActionResult AddToCart(int productId, int quantity = 1)
         {
             try
             {
@@ -42,7 +39,7 @@ namespace ProductCatalog.Controllers
 
                 if (product != null)
                 {
-                    var cart = Session["Cart"] as List<CartItem> ?? new List<CartItem>();
+                    var cart = HttpContext.Session.GetObject<List<CartItem>>("Cart") ?? new List<CartItem>();
                     var existingItem = cart.FirstOrDefault(c => c.Product.Id == productId);
 
                     if (existingItem != null)
@@ -58,7 +55,7 @@ namespace ProductCatalog.Controllers
                         });
                     }
 
-                    Session["Cart"] = cart;
+                    HttpContext.Session.SetObject("Cart", cart);
                     TempData["SuccessMessage"] = product.Name + " has been added to your cart!";
                 }
                 else
@@ -74,18 +71,18 @@ namespace ProductCatalog.Controllers
             return RedirectToAction("Index");
         }
 
-        public ActionResult Cart()
+        public IActionResult Cart()
         {
-            var cart = Session["Cart"] as List<CartItem> ?? new List<CartItem>();
+            var cart = HttpContext.Session.GetObject<List<CartItem>>("Cart") ?? new List<CartItem>();
             return View(cart);
         }
 
         [HttpPost]
-        public ActionResult UpdateQuantity(int productId, int quantity)
+        public IActionResult UpdateQuantity(int productId, int quantity)
         {
             try
             {
-                var cart = Session["Cart"] as List<CartItem> ?? new List<CartItem>();
+                var cart = HttpContext.Session.GetObject<List<CartItem>>("Cart") ?? new List<CartItem>();
                 var item = cart.FirstOrDefault(c => c.Product.Id == productId);
 
                 if (item != null)
@@ -108,7 +105,7 @@ namespace ProductCatalog.Controllers
                         TempData["SuccessMessage"] = "Item removed from cart.";
                     }
 
-                    Session["Cart"] = cart;
+                    HttpContext.Session.SetObject("Cart", cart);
                 }
             }
             catch (Exception ex)
@@ -120,17 +117,17 @@ namespace ProductCatalog.Controllers
         }
 
         [HttpPost]
-        public ActionResult RemoveFromCart(int productId)
+        public IActionResult RemoveFromCart(int productId)
         {
             try
             {
-                var cart = Session["Cart"] as List<CartItem> ?? new List<CartItem>();
+                var cart = HttpContext.Session.GetObject<List<CartItem>>("Cart") ?? new List<CartItem>();
                 var item = cart.FirstOrDefault(c => c.Product.Id == productId);
 
                 if (item != null)
                 {
                     cart.Remove(item);
-                    Session["Cart"] = cart;
+                    HttpContext.Session.SetObject("Cart", cart);
                     TempData["SuccessMessage"] = item.Product.Name + " has been removed from your cart.";
                 }
             }
@@ -143,19 +140,19 @@ namespace ProductCatalog.Controllers
         }
 
         [HttpPost]
-        public ActionResult ClearCart()
+        public IActionResult ClearCart()
         {
-            Session["Cart"] = new List<CartItem>();
+            HttpContext.Session.SetObject("Cart", new List<CartItem>());
             TempData["SuccessMessage"] = "Your cart has been cleared.";
             return RedirectToAction("Cart");
         }
 
         [HttpPost]
-        public ActionResult SubmitOrder()
+        public IActionResult SubmitOrder()
         {
             try
             {
-                var cart = Session["Cart"] as List<CartItem> ?? new List<CartItem>();
+                var cart = HttpContext.Session.GetObject<List<CartItem>>("Cart") ?? new List<CartItem>();
 
                 if (cart == null || !cart.Any())
                 {
@@ -172,7 +169,7 @@ namespace ProductCatalog.Controllers
                 // Create order
                 var order = new Order
                 {
-                    CustomerSessionId = Session.SessionID,
+                    CustomerSessionId = HttpContext.Session.Id,
                     Subtotal = subtotal,
                     Tax = tax,
                     Shipping = shipping,
@@ -198,7 +195,7 @@ namespace ProductCatalog.Controllers
                 queueService.SendOrder(order);
 
                 // Clear the cart
-                Session["Cart"] = new List<CartItem>();
+                HttpContext.Session.SetObject("Cart", new List<CartItem>());
 
                 // Redirect to confirmation page
                 TempData["SuccessMessage"] = $"Order {order.OrderId} has been submitted successfully! Total: ${total:N2}";
@@ -213,7 +210,7 @@ namespace ProductCatalog.Controllers
             }
         }
 
-        public ActionResult OrderConfirmation()
+        public IActionResult OrderConfirmation()
         {
             if (TempData["OrderId"] == null)
             {
@@ -223,14 +220,14 @@ namespace ProductCatalog.Controllers
             return View();
         }
 
-        public ActionResult About()
+        public IActionResult About()
         {
             ViewBag.Message = "Your application description page.";
 
             return View();
         }
 
-        public ActionResult Contact()
+        public IActionResult Contact()
         {
             ViewBag.Message = "Your contact page.";
 
