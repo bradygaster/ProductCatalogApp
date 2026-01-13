@@ -1,5 +1,5 @@
 ﻿using ProductCatalog.Models;
-using ProductCatalog.ProductServiceReference;
+using ProductServiceLibrary;
 using ProductCatalog.Services;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Http;
@@ -9,6 +9,14 @@ namespace ProductCatalog.Controllers
 {
     public class HomeController : Controller
     {
+        private readonly IProductService _productService;
+
+        public HomeController()
+        {
+            // In a production app, this should be injected via dependency injection
+            _productService = new ProductService();
+        }
+
         // Helper methods for session management in ASP.NET Core
         private List<CartItem> GetCart()
         {
@@ -27,10 +35,7 @@ namespace ProductCatalog.Controllers
 
             try
             {
-                using (var client = new ProductServiceClient())
-                {
-                    products = client.GetAllProducts().ToList();
-                }
+                products = _productService.GetAllProducts();
             }
             catch (Exception ex)
             {
@@ -45,11 +50,7 @@ namespace ProductCatalog.Controllers
         {
             try
             {
-                Product product = null;
-                using (var client = new ProductServiceClient())
-                {
-                    product = client.GetProductById(productId);
-                }
+                Product product = _productService.GetProductById(productId);
 
                 if (product != null)
                 {
