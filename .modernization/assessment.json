@@ -1,0 +1,320 @@
+{
+  "assessmentVersion": "1.0",
+  "timestamp": "2026-01-13T02:40:31.071Z",
+  "repository": {
+    "name": "ProductCatalogApp",
+    "owner": "bradygaster"
+  },
+  "currentState": {
+    "framework": {
+      "name": ".NET Framework",
+      "version": "4.8.1",
+      "targetFramework": "net481",
+      "sdkStyle": false,
+      "crossPlatform": false
+    },
+    "projects": [
+      {
+        "name": "ProductCatalog",
+        "type": "ASP.NET MVC Web Application",
+        "framework": "net481",
+        "projectFormat": "legacy",
+        "webFramework": "ASP.NET MVC 5.2.9",
+        "dependencies": [
+          "Microsoft.AspNet.Mvc 5.2.9",
+          "Microsoft.AspNet.Razor 3.2.9",
+          "Microsoft.AspNet.WebPages 3.2.9",
+          "Newtonsoft.Json 13.0.3",
+          "jQuery 3.7.0",
+          "bootstrap 5.2.3"
+        ],
+        "linesOfCode": 800,
+        "files": 9
+      },
+      {
+        "name": "ProductServiceLibrary",
+        "type": "WCF Service Library",
+        "framework": "net481",
+        "projectFormat": "legacy",
+        "technology": "WCF (Windows Communication Foundation)",
+        "dependencies": [
+          "System.ServiceModel",
+          "System.Runtime.Serialization"
+        ],
+        "linesOfCode": 650,
+        "files": 6
+      },
+      {
+        "name": "OrderProcessor",
+        "type": "Console Application",
+        "framework": ".NET Framework (legacy)",
+        "projectFormat": "legacy",
+        "technology": "MSMQ Message Processing",
+        "dependencies": [
+          "System.Messaging",
+          "System.Configuration"
+        ],
+        "linesOfCode": 514,
+        "files": 2
+      }
+    ],
+    "totalLinesOfCode": 1964,
+    "totalFiles": 17
+  },
+  "legacyPatterns": [
+    {
+      "category": "Web Framework",
+      "pattern": "ASP.NET MVC 5",
+      "severity": "high",
+      "description": "Using legacy ASP.NET MVC 5 framework which requires IIS and Windows hosting",
+      "impact": "Cannot run on Linux/containers without major rewrite",
+      "recommendation": "Migrate to ASP.NET Core MVC or Razor Pages"
+    },
+    {
+      "category": "Service Architecture",
+      "pattern": "WCF (Windows Communication Foundation)",
+      "severity": "high",
+      "description": "WCF service library for product data access",
+      "impact": "WCF is not supported in .NET Core/.NET 5+",
+      "recommendation": "Migrate to REST API (ASP.NET Core Web API) or gRPC"
+    },
+    {
+      "category": "Messaging",
+      "pattern": "MSMQ (Microsoft Message Queuing)",
+      "severity": "high",
+      "description": "Using MSMQ for asynchronous order processing",
+      "impact": "MSMQ is Windows-only and not supported in containers",
+      "recommendation": "Migrate to Azure Service Bus or Azure Storage Queues"
+    },
+    {
+      "category": "Project Format",
+      "pattern": "Legacy .csproj format",
+      "severity": "medium",
+      "description": "Using old-style project files with packages.config",
+      "impact": "Cannot use modern .NET tooling and features",
+      "recommendation": "Convert to SDK-style projects with PackageReference"
+    },
+    {
+      "category": "Configuration",
+      "pattern": "Web.config / App.config",
+      "severity": "medium",
+      "description": "XML-based configuration files",
+      "impact": "Not compatible with modern configuration patterns",
+      "recommendation": "Migrate to appsettings.json and modern configuration"
+    },
+    {
+      "category": "Dependency Management",
+      "pattern": "packages.config",
+      "severity": "low",
+      "description": "Using packages.config for NuGet packages",
+      "impact": "Slower restore, larger project files",
+      "recommendation": "Convert to PackageReference format"
+    },
+    {
+      "category": "Session State",
+      "pattern": "In-memory Session",
+      "severity": "medium",
+      "description": "Using ASP.NET session state for shopping cart",
+      "impact": "Not suitable for containerized/scaled deployments",
+      "recommendation": "Use distributed cache (Redis) or database for session"
+    },
+    {
+      "category": "Hosting",
+      "pattern": "IIS-specific features",
+      "severity": "medium",
+      "description": "Web application designed for IIS hosting",
+      "impact": "Cannot deploy to Azure Container Apps without migration",
+      "recommendation": "Migrate to Kestrel-based hosting"
+    }
+  ],
+  "modernizationPath": {
+    "targetFramework": ".NET 10",
+    "targetPlatform": "Azure Container Apps",
+    "phases": [
+      {
+        "phase": 1,
+        "name": "Project Structure Modernization",
+        "description": "Convert to SDK-style projects and .NET 10",
+        "tasks": [
+          "Convert ProductCatalog to SDK-style project",
+          "Convert ProductServiceLibrary to SDK-style project",
+          "Convert OrderProcessor to SDK-style project",
+          "Update all projects to target net10.0",
+          "Migrate packages.config to PackageReference",
+          "Update NuGet packages to .NET 10 compatible versions"
+        ],
+        "estimatedEffort": "4-8 hours",
+        "complexity": 6
+      },
+      {
+        "phase": 2,
+        "name": "Web Application Migration",
+        "description": "Migrate ASP.NET MVC 5 to ASP.NET Core MVC",
+        "tasks": [
+          "Create new ASP.NET Core MVC project",
+          "Migrate controllers and action methods",
+          "Migrate Razor views and layouts",
+          "Update routing configuration",
+          "Migrate bundling/minification to modern approach",
+          "Update authentication/authorization if present",
+          "Replace Session state with distributed cache",
+          "Update dependency injection"
+        ],
+        "estimatedEffort": "16-24 hours",
+        "complexity": 8
+      },
+      {
+        "phase": 3,
+        "name": "WCF to REST API Migration",
+        "description": "Replace WCF service with ASP.NET Core Web API",
+        "tasks": [
+          "Create ASP.NET Core Web API project",
+          "Convert WCF service contracts to API controllers",
+          "Implement REST endpoints for all operations",
+          "Update ProductCatalog to call REST API instead of WCF",
+          "Add proper error handling and status codes",
+          "Implement API versioning",
+          "Add OpenAPI/Swagger documentation"
+        ],
+        "estimatedEffort": "12-16 hours",
+        "complexity": 7
+      },
+      {
+        "phase": 4,
+        "name": "MSMQ to Azure Service Bus Migration",
+        "description": "Replace MSMQ with Azure Service Bus",
+        "tasks": [
+          "Set up Azure Service Bus namespace and queue",
+          "Create Azure Service Bus client in web app",
+          "Replace MSMQ queue sending with Service Bus",
+          "Update OrderProcessor to consume from Service Bus",
+          "Implement error handling and retry logic",
+          "Update configuration for connection strings",
+          "Test message flow end-to-end"
+        ],
+        "estimatedEffort": "8-12 hours",
+        "complexity": 6
+      },
+      {
+        "phase": 5,
+        "name": "Containerization",
+        "description": "Create Docker containers for all components",
+        "tasks": [
+          "Create Dockerfile for web application",
+          "Create Dockerfile for API service",
+          "Create Dockerfile for order processor",
+          "Create docker-compose for local testing",
+          "Optimize container images",
+          "Configure health checks",
+          "Set up environment-based configuration"
+        ],
+        "estimatedEffort": "6-10 hours",
+        "complexity": 5
+      },
+      {
+        "phase": 6,
+        "name": "Azure Container Apps Deployment",
+        "description": "Deploy to Azure Container Apps",
+        "tasks": [
+          "Create Azure Container Apps environment",
+          "Configure container registry",
+          "Deploy web application container",
+          "Deploy API service container",
+          "Deploy order processor container",
+          "Configure ingress and networking",
+          "Set up managed identity for Azure Service Bus",
+          "Configure scaling rules",
+          "Set up monitoring and logging",
+          "Implement CI/CD pipeline"
+        ],
+        "estimatedEffort": "10-16 hours",
+        "complexity": 7
+      }
+    ],
+    "totalEstimatedEffort": "56-86 hours",
+    "overallComplexity": 7
+  },
+  "complexity": {
+    "score": 7,
+    "scale": "1-10 (1=simple, 10=very complex)",
+    "factors": {
+      "codebaseSize": {
+        "score": 4,
+        "reason": "~2000 lines of code is moderate size"
+      },
+      "architecturalComplexity": {
+        "score": 8,
+        "reason": "Multiple components (MVC, WCF, MSMQ) with different modernization paths"
+      },
+      "legacyTechnologyDebt": {
+        "score": 9,
+        "reason": "Heavy use of Windows-only legacy technologies (WCF, MSMQ, IIS)"
+      },
+      "frameworkMigrationDifficulty": {
+        "score": 8,
+        "reason": "ASP.NET MVC to Core and WCF to REST require significant changes"
+      },
+      "testCoverage": {
+        "score": 8,
+        "reason": "No automated tests found, will need testing strategy"
+      },
+      "dependencyModernization": {
+        "score": 6,
+        "reason": "Most dependencies have .NET 10 equivalents"
+      }
+    },
+    "riskLevel": "medium-high",
+    "risks": [
+      {
+        "risk": "WCF to REST migration may require significant refactoring",
+        "mitigation": "Create API contracts first, migrate incrementally"
+      },
+      {
+        "risk": "MSMQ to Service Bus requires Azure infrastructure",
+        "mitigation": "Use Azure emulators for development, staged rollout"
+      },
+      {
+        "risk": "Session state migration may affect user experience",
+        "mitigation": "Implement distributed cache early, thorough testing"
+      },
+      {
+        "risk": "No automated tests increase regression risk",
+        "mitigation": "Create smoke tests before migration, add tests during migration"
+      }
+    ]
+  },
+  "recommendations": {
+    "immediate": [
+      "Create a development branch for modernization work",
+      "Set up .NET 10 SDK and development environment",
+      "Review and document current application behavior",
+      "Set up Azure resources (Container Registry, Service Bus) for dev/test"
+    ],
+    "shortTerm": [
+      "Start with Phase 1: Project structure modernization",
+      "Create new SDK-style projects targeting .NET 10",
+      "Set up basic CI/CD pipeline for .NET 10 builds",
+      "Begin WCF to REST API migration as it's needed by web app"
+    ],
+    "longTerm": [
+      "Implement comprehensive automated testing",
+      "Consider microservices architecture for future scalability",
+      "Implement proper logging and monitoring from the start",
+      "Document architecture decisions and migration patterns"
+    ]
+  },
+  "estimatedTimeline": {
+    "optimistic": "7-11 weeks (1 developer, full-time)",
+    "realistic": "12-16 weeks (1 developer with other responsibilities)",
+    "conservative": "16-22 weeks (part-time or complex issues encountered)"
+  },
+  "successCriteria": [
+    "All applications running on .NET 10",
+    "Web application deployed to Azure Container Apps",
+    "WCF replaced with REST API",
+    "MSMQ replaced with Azure Service Bus",
+    "All functionality working as in original application",
+    "Application is containerized and scalable",
+    "Basic monitoring and logging in place"
+  ]
+}
