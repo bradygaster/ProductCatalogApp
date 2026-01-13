@@ -1,0 +1,264 @@
+{
+  "metadata": {
+    "assessmentDate": "2026-01-13T08:41:32.719Z",
+    "repositoryName": "ProductCatalogApp",
+    "repositoryOwner": "bradygaster",
+    "assessmentVersion": "1.0"
+  },
+  "currentState": {
+    "framework": {
+      "name": ".NET Framework",
+      "version": "4.8.1",
+      "targetFramework": "net481"
+    },
+    "projectStructure": {
+      "totalProjects": 3,
+      "projects": [
+        {
+          "name": "ProductCatalog",
+          "type": "ASP.NET MVC 5 Web Application",
+          "framework": "net4.8.1",
+          "projectType": "Web",
+          "toolsVersion": "15.0"
+        },
+        {
+          "name": "ProductServiceLibrary",
+          "type": "WCF Service Library",
+          "framework": "net4.8.1",
+          "projectType": "WCF",
+          "toolsVersion": "15.0"
+        },
+        {
+          "name": "OrderProcessor",
+          "type": "Console Application (standalone files)",
+          "framework": "net4.8.1",
+          "projectType": "Console",
+          "notes": "Not properly structured as a project yet"
+        }
+      ]
+    },
+    "dependencies": {
+      "ProductCatalog": [
+        "Microsoft.AspNet.Mvc 5.2.9",
+        "Microsoft.AspNet.WebPages 3.2.9",
+        "Microsoft.AspNet.Razor 3.2.9",
+        "Microsoft.AspNet.Web.Optimization 1.1.3",
+        "Newtonsoft.Json 13.0.3",
+        "jQuery 3.7.0",
+        "Bootstrap 5.x",
+        "System.Messaging (MSMQ)",
+        "WCF Client (ProductServiceReference)"
+      ],
+      "ProductServiceLibrary": [
+        "System.ServiceModel (WCF)",
+        "System.Runtime.Serialization"
+      ],
+      "OrderProcessor": [
+        "System.Messaging (MSMQ)",
+        "System.Configuration"
+      ]
+    },
+    "legacyPatterns": [
+      {
+        "pattern": "WCF (Windows Communication Foundation)",
+        "impact": "High",
+        "description": "ProductServiceLibrary uses WCF for service communication",
+        "location": "ProductServiceLibrary/*",
+        "modernAlternative": "gRPC or ASP.NET Core Web API"
+      },
+      {
+        "pattern": "MSMQ (Microsoft Message Queue)",
+        "impact": "High",
+        "description": "Order processing uses MSMQ for async messaging",
+        "location": "ProductCatalog/Services/OrderQueueService.cs, OrderProcessor/Program.cs",
+        "modernAlternative": "Azure Service Bus or Azure Storage Queues"
+      },
+      {
+        "pattern": "Session State",
+        "impact": "High",
+        "description": "Shopping cart uses in-memory session state",
+        "location": "ProductCatalog/Controllers/HomeController.cs",
+        "modernAlternative": "Distributed cache (Redis) or database-backed state"
+      },
+      {
+        "pattern": "ASP.NET MVC 5",
+        "impact": "High",
+        "description": "Web UI built with ASP.NET MVC 5",
+        "location": "ProductCatalog/*",
+        "modernAlternative": "ASP.NET Core MVC or Razor Pages"
+      },
+      {
+        "pattern": "Old Project Format (csproj)",
+        "impact": "Medium",
+        "description": "Uses legacy .NET Framework project format",
+        "location": "*.csproj",
+        "modernAlternative": "SDK-style project format"
+      },
+      {
+        "pattern": "packages.config",
+        "impact": "Medium",
+        "description": "Uses packages.config for NuGet",
+        "location": "ProductCatalog/packages.config",
+        "modernAlternative": "PackageReference in project file"
+      },
+      {
+        "pattern": "Web.config",
+        "impact": "Medium",
+        "description": "Configuration in XML-based Web.config",
+        "location": "ProductCatalog/Web.config",
+        "modernAlternative": "appsettings.json and IConfiguration"
+      }
+    ],
+    "infrastructure": {
+      "hosting": "IIS/Windows Server",
+      "operatingSystem": "Windows",
+      "database": "In-memory (ProductRepository)",
+      "messaging": "MSMQ"
+    }
+  },
+  "targetState": {
+    "framework": {
+      "name": ".NET",
+      "version": "10.0",
+      "targetFramework": "net10.0"
+    },
+    "hosting": {
+      "platform": "Azure Container Apps",
+      "containerization": "Docker",
+      "orchestration": "Azure Container Apps managed"
+    },
+    "architecture": {
+      "webApp": "ASP.NET Core MVC",
+      "api": "ASP.NET Core Web API (REST or gRPC)",
+      "messaging": "Azure Service Bus",
+      "cache": "Azure Cache for Redis",
+      "database": "Azure SQL Database or Cosmos DB (if needed)"
+    }
+  },
+  "complexityAssessment": {
+    "overallComplexity": 7,
+    "reasoning": "Medium-high complexity due to multiple technology replacements (WCF, MSMQ, Session state) and containerization requirements",
+    "breakdown": {
+      "frameworkMigration": 8,
+      "wcfReplacement": 9,
+      "msmqReplacement": 7,
+      "sessionStateRefactoring": 6,
+      "containerization": 5,
+      "azureDeployment": 6
+    },
+    "estimatedEffort": {
+      "hours": "60-80",
+      "complexity": "Medium-High",
+      "riskLevel": "Medium"
+    }
+  },
+  "migrationPath": {
+    "approach": "Incremental modernization with parallel services",
+    "phases": [
+      {
+        "phase": 1,
+        "name": "Foundation",
+        "tasks": [
+          "Migrate ProductServiceLibrary WCF to ASP.NET Core Web API",
+          "Create new .NET 10 project structure",
+          "Implement REST API endpoints"
+        ]
+      },
+      {
+        "phase": 2,
+        "name": "Web Application Migration",
+        "tasks": [
+          "Migrate ProductCatalog to ASP.NET Core MVC",
+          "Update views and controllers",
+          "Replace WCF client with HttpClient/REST calls",
+          "Implement distributed session state with Redis"
+        ]
+      },
+      {
+        "phase": 3,
+        "name": "Messaging Modernization",
+        "tasks": [
+          "Replace MSMQ with Azure Service Bus",
+          "Update OrderQueueService to use Azure Service Bus",
+          "Migrate OrderProcessor to .NET 10 console app"
+        ]
+      },
+      {
+        "phase": 4,
+        "name": "Containerization",
+        "tasks": [
+          "Create Dockerfiles for all applications",
+          "Set up multi-container orchestration",
+          "Configure health checks and logging"
+        ]
+      },
+      {
+        "phase": 5,
+        "name": "Azure Deployment",
+        "tasks": [
+          "Configure Azure Container Apps environment",
+          "Set up Azure Service Bus namespace",
+          "Deploy and test all services",
+          "Configure monitoring and scaling"
+        ]
+      }
+    ]
+  },
+  "recommendations": [
+    {
+      "priority": "High",
+      "recommendation": "Start with ProductServiceLibrary migration to establish the API foundation",
+      "reasoning": "This is the core service dependency; migrating it first enables parallel development"
+    },
+    {
+      "priority": "High",
+      "recommendation": "Replace MSMQ early in the process",
+      "reasoning": "MSMQ is Windows-specific and incompatible with containerization; Azure Service Bus provides cloud-native alternative"
+    },
+    {
+      "priority": "Medium",
+      "recommendation": "Implement proper database persistence",
+      "reasoning": "Current in-memory repository won't scale; consider Azure SQL or Cosmos DB"
+    },
+    {
+      "priority": "Medium",
+      "recommendation": "Use Redis for session state from the start",
+      "reasoning": "Essential for stateless containers and horizontal scaling"
+    },
+    {
+      "priority": "Low",
+      "recommendation": "Consider adding API Gateway pattern",
+      "reasoning": "Simplifies client communication and provides centralized authentication/routing"
+    }
+  ],
+  "risks": [
+    {
+      "risk": "WCF to REST/gRPC migration complexity",
+      "severity": "High",
+      "mitigation": "Maintain WCF contracts initially, implement adapters for gradual transition"
+    },
+    {
+      "risk": "Session state loss during migration",
+      "severity": "Medium",
+      "mitigation": "Implement session migration strategy or accept cart loss during deployment"
+    },
+    {
+      "risk": "MSMQ message queue data loss",
+      "severity": "Medium",
+      "mitigation": "Drain MSMQ queues before migration, implement dual-write pattern during transition"
+    },
+    {
+      "risk": "Container orchestration learning curve",
+      "severity": "Medium",
+      "mitigation": "Start with simple container setup, leverage Azure Container Apps managed features"
+    }
+  ],
+  "prerequisites": [
+    "Azure subscription with appropriate permissions",
+    "Azure Container Registry for container images",
+    "Azure Service Bus namespace",
+    "Azure Cache for Redis instance",
+    "Docker Desktop for local testing",
+    ".NET 10 SDK installed"
+  ]
+}
