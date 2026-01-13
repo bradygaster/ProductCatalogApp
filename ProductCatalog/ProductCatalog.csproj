@@ -293,7 +293,7 @@
     <PropertyGroup>
       <ErrorText>This project references NuGet package(s) that are missing on this computer. Use NuGet Package Restore to download them.  For more information, see http://go.microsoft.com/fwlink/?LinkID=322105. The missing file is {0}.</ErrorText>
     </PropertyGroup>
-    <!-- Only error if RestorePackages is enabled and we're on Windows (where packages.config restore is expected) -->
+    <!-- Only error if RestorePackages is enabled (typically set in packages.config restore scenarios) -->
     <Error Condition="'$(RestorePackages)' == 'true' And !Exists('..\packages\Microsoft.CodeDom.Providers.DotNetCompilerPlatform.2.0.1\build\net46\Microsoft.CodeDom.Providers.DotNetCompilerPlatform.props')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\Microsoft.CodeDom.Providers.DotNetCompilerPlatform.2.0.1\build\net46\Microsoft.CodeDom.Providers.DotNetCompilerPlatform.props'))" />
   </Target>
   <Target Name="CopyRoslynFiles" AfterTargets="AfterBuild">
