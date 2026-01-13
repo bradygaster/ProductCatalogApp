@@ -6,14 +6,14 @@ namespace ProductCatalog.Models
     [Serializable]
     public class Order
     {
-        public string OrderId { get; set; }
+        public string OrderId { get; set; } = null!;
         public DateTime OrderDate { get; set; }
-        public List<OrderItem> Items { get; set; }
+        public List<OrderItem> Items { get; set; } = null!;
         public decimal Subtotal { get; set; }
         public decimal Tax { get; set; }
         public decimal Shipping { get; set; }
         public decimal Total { get; set; }
-        public string CustomerSessionId { get; set; }
+        public string CustomerSessionId { get; set; } = null!;
 
         public Order()
         {
@@ -27,8 +27,8 @@ namespace ProductCatalog.Models
     public class OrderItem
     {
         public int ProductId { get; set; }
-        public string ProductName { get; set; }
-        public string SKU { get; set; }
+        public string ProductName { get; set; } = null!;
+        public string SKU { get; set; } = null!;
         public decimal Price { get; set; }
         public int Quantity { get; set; }
         public decimal Subtotal { get; set; }
