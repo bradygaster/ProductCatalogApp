@@ -92,7 +92,7 @@
       "name": "ProductCatalog",
       "type": "ASP.NET MVC 5 Web Application",
       "path": "ProductCatalog/ProductCatalog.csproj",
-      "target_framework": "net481",
+      "current_framework": "net481",
       "migration_path": "ASP.NET Core MVC on .NET 10",
       "complexity": "high",
       "key_dependencies": [
@@ -113,7 +113,7 @@
       "name": "ProductServiceLibrary",
       "type": "WCF Service Library",
       "path": "ProductServiceLibrary/ProductServiceLibrary.csproj",
-      "target_framework": "net481",
+      "current_framework": "net481",
       "migration_path": "gRPC service or ASP.NET Core Web API",
       "complexity": "high",
       "key_dependencies": [
@@ -128,7 +128,7 @@
       "name": "OrderProcessor",
       "type": "Console Application",
       "path": "OrderProcessor",
-      "target_framework": "net481",
+      "current_framework": "net481",
       "migration_path": "Azure Functions or Azure Container Apps background worker",
       "complexity": "medium",
       "key_dependencies": [

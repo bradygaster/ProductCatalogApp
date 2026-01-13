@@ -49,7 +49,7 @@ This is a legacy .NET Framework 4.8.1 application consisting of an ASP.NET MVC 5
   - ServiceContract/OperationContract attributes
 
 #### 3. **OrderProcessor** (Console Application)
-- **Framework:** Unknown (.NET Framework assumed)
+- **Framework:** .NET Framework 4.8.1
 - **Type:** Console Application
 - **Purpose:** Background order processing
 - **Key Technologies:**
@@ -450,7 +450,7 @@ This application is built on technologies that are either deprecated or not suit
 
 ## Additional Resources
 
-- [Migrate from ASP.NET to ASP.NET Core](https://learn.microsoft.com/aspnet/core/migration/proper-to-2x)
+- [Migrate from ASP.NET to ASP.NET Core](https://learn.microsoft.com/aspnet/core/migration/overview)
 - [Azure Container Apps documentation](https://learn.microsoft.com/azure/container-apps)
 - [Azure Service Bus documentation](https://learn.microsoft.com/azure/service-bus-messaging)
 - [gRPC for .NET documentation](https://learn.microsoft.com/aspnet/core/grpc)
