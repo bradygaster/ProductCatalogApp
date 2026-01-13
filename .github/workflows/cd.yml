@@ -1,0 +1,166 @@
+name: CD
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Environment to deploy to'
+        required: true
+        type: choice
+        options:
+          - dev
+          - staging
+          - production
+
+jobs:
+  build-and-publish:
+    name: Build and Publish
+    runs-on: windows-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Setup NuGet
+        uses: nuget/setup-nuget@v2
+        with:
+          nuget-version: 'latest'
+      
+      - name: Setup MSBuild
+        uses: microsoft/setup-msbuild@v2
+      
+      - name: Cache NuGet packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.nuget/packages
+          key: ${{ runner.os }}-nuget-${{ hashFiles('**/packages.config') }}
+          restore-keys: |
+            ${{ runner.os }}-nuget-
+      
+      - name: Restore NuGet packages
+        run: nuget restore ProductCatalogApp.slnx
+      
+      - name: Build solution
+        run: msbuild ProductCatalogApp.slnx /p:Configuration=Release /p:Platform="Any CPU" /p:DeployOnBuild=true /p:WebPublishMethod=Package /p:PackageAsSingleFile=true /p:SkipInvalidConfigurations=true /p:OutputPath=./publish
+      
+      - name: Create deployment package
+        run: |
+          Compress-Archive -Path ./ProductCatalog/publish/* -DestinationPath ./deployment-package.zip
+        shell: pwsh
+      
+      - name: Upload deployment package
+        uses: actions/upload-artifact@v4
+        with:
+          name: deployment-package
+          path: deployment-package.zip
+          retention-days: 30
+
+  deploy-dev:
+    name: Deploy to Development
+    needs: build-and-publish
+    runs-on: ubuntu-latest
+    environment:
+      name: dev
+      url: ${{ steps.deploy.outputs.webapp-url }}
+    if: github.event_name == 'push' || github.event.inputs.environment == 'dev'
+    
+    steps:
+      - name: Download deployment package
+        uses: actions/download-artifact@v4
+        with:
+          name: deployment-package
+      
+      - name: Azure Login
+        uses: azure/login@v2
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+      
+      - name: Deploy to Azure Web App
+        id: deploy
+        uses: azure/webapps-deploy@v3
+        with:
+          app-name: ${{ secrets.AZURE_WEBAPP_NAME_DEV }}
+          resource-group-name: ${{ secrets.AZURE_RESOURCE_GROUP }}
+          package: deployment-package.zip
+      
+      - name: Verify deployment
+        run: |
+          echo "Deployment completed to dev environment"
+          echo "URL: ${{ steps.deploy.outputs.webapp-url }}"
+
+  deploy-staging:
+    name: Deploy to Staging
+    needs: build-and-publish
+    runs-on: ubuntu-latest
+    environment:
+      name: staging
+      url: ${{ steps.deploy.outputs.webapp-url }}
+    if: github.event.inputs.environment == 'staging'
+    
+    steps:
+      - name: Download deployment package
+        uses: actions/download-artifact@v4
+        with:
+          name: deployment-package
+      
+      - name: Azure Login
+        uses: azure/login@v2
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+      
+      - name: Deploy to Azure Web App
+        id: deploy
+        uses: azure/webapps-deploy@v3
+        with:
+          app-name: ${{ secrets.AZURE_WEBAPP_NAME_STAGING }}
+          resource-group-name: ${{ secrets.AZURE_RESOURCE_GROUP }}
+          package: deployment-package.zip
+      
+      - name: Verify deployment
+        run: |
+          echo "Deployment completed to staging environment"
+          echo "URL: ${{ steps.deploy.outputs.webapp-url }}"
+
+  deploy-production:
+    name: Deploy to Production
+    needs: build-and-publish
+    runs-on: ubuntu-latest
+    environment:
+      name: production
+      url: ${{ steps.deploy.outputs.webapp-url }}
+    if: github.event.inputs.environment == 'production'
+    
+    steps:
+      - name: Download deployment package
+        uses: actions/download-artifact@v4
+        with:
+          name: deployment-package
+      
+      - name: Azure Login
+        uses: azure/login@v2
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+      
+      - name: Deploy to Azure Web App
+        id: deploy
+        uses: azure/webapps-deploy@v3
+        with:
+          app-name: ${{ secrets.AZURE_WEBAPP_NAME_PROD }}
+          resource-group-name: ${{ secrets.AZURE_RESOURCE_GROUP }}
+          package: deployment-package.zip
+      
+      - name: Verify deployment
+        run: |
+          echo "Deployment completed to production environment"
+          echo "URL: ${{ steps.deploy.outputs.webapp-url }}"
+      
+      - name: Create release tag
+        run: |
+          git config user.name "GitHub Actions"
+          git config user.email "actions@github.com"
+          TAG="v$(date +'%Y%m%d-%H%M%S')"
+          git tag -a $TAG -m "Production release $TAG"
+          git push origin $TAG

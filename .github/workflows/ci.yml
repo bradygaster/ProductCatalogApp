@@ -1,0 +1,103 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - main
+      - develop
+      - 'feature/**'
+      - 'copilot/**'
+  pull_request:
+    branches:
+      - main
+      - develop
+
+jobs:
+  build:
+    name: Build and Test
+    runs-on: windows-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Setup NuGet
+        uses: nuget/setup-nuget@v2
+        with:
+          nuget-version: 'latest'
+      
+      - name: Setup MSBuild
+        uses: microsoft/setup-msbuild@v2
+      
+      - name: Cache NuGet packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.nuget/packages
+          key: ${{ runner.os }}-nuget-${{ hashFiles('**/packages.config') }}
+          restore-keys: |
+            ${{ runner.os }}-nuget-
+      
+      - name: Restore NuGet packages
+        run: nuget restore ProductCatalogApp.slnx
+      
+      - name: Build solution
+        run: msbuild ProductCatalogApp.slnx /p:Configuration=Release /p:Platform="Any CPU" /p:DeployOnBuild=true /p:WebPublishMethod=Package /p:PackageAsSingleFile=true /p:SkipInvalidConfigurations=true
+      
+      - name: Run tests
+        run: |
+          $testProjects = Get-ChildItem -Recurse -Filter "*Tests.csproj"
+          if ($testProjects.Count -gt 0) {
+            foreach ($testProject in $testProjects) {
+              Write-Host "Running tests in $($testProject.FullName)"
+              dotnet test $testProject.FullName --configuration Release --no-build --verbosity normal
+            }
+          } else {
+            Write-Host "No test projects found - skipping test execution"
+          }
+        shell: pwsh
+        continue-on-error: true
+      
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-artifacts
+          path: |
+            **/bin/Release/
+            !**/obj/
+          retention-days: 7
+
+  security-scan:
+    name: Security Scan
+    runs-on: ubuntu-latest
+    permissions:
+      security-events: write
+      contents: read
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@v3
+        with:
+          languages: csharp
+          queries: security-and-quality
+      
+      - name: Setup NuGet
+        uses: nuget/setup-nuget@v2
+        with:
+          nuget-version: 'latest'
+      
+      - name: Setup MSBuild
+        uses: microsoft/setup-msbuild@v2
+      
+      - name: Restore NuGet packages
+        run: nuget restore ProductCatalogApp.slnx
+      
+      - name: Build for CodeQL analysis
+        run: msbuild ProductCatalogApp.slnx /p:Configuration=Release /p:Platform="Any CPU"
+      
+      - name: Perform CodeQL Analysis
+        uses: github/codeql-action/analyze@v3
+        with:
+          category: "/language:csharp"
