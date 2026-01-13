@@ -1,0 +1,195 @@
+{
+  "repository": "bradygaster/ProductCatalogApp",
+  "assessment_date": "2026-01-13T08:52:35.321Z",
+  "target_framework": ".NET 10",
+  "target_platform": "Azure Container Apps",
+  "complexity_score": 7,
+  "projects": [
+    {
+      "name": "ProductCatalog",
+      "type": "ASP.NET MVC Web Application",
+      "current_framework": ".NET Framework 4.8.1",
+      "framework_version": "ASP.NET MVC 5.2.9",
+      "project_format": "Legacy (.NET Framework)",
+      "legacy_patterns": [
+        "Old-style .csproj format",
+        "ASP.NET MVC (not ASP.NET Core)",
+        "WCF Service Reference",
+        "System.Messaging (MSMQ)",
+        "Session state management",
+        "packages.config for NuGet",
+        "Web.config for configuration"
+      ],
+      "dependencies": [
+        "Microsoft.AspNet.Mvc 5.2.9",
+        "Microsoft.AspNet.WebPages 3.2.9",
+        "Microsoft.AspNet.Razor 3.2.9",
+        "Newtonsoft.Json 13.0.3",
+        "Bootstrap 5.2.3",
+        "jQuery 3.7.0"
+      ],
+      "migration_complexity": 8
+    },
+    {
+      "name": "ProductServiceLibrary",
+      "type": "WCF Service Library",
+      "current_framework": ".NET Framework 4.8.1",
+      "framework_version": "WCF",
+      "project_format": "Legacy (.NET Framework)",
+      "legacy_patterns": [
+        "Windows Communication Foundation (WCF)",
+        "ServiceContract/OperationContract attributes",
+        "Old-style .csproj format",
+        "App.config for service configuration"
+      ],
+      "dependencies": [
+        "System.ServiceModel",
+        "System.Runtime.Serialization"
+      ],
+      "migration_complexity": 7
+    },
+    {
+      "name": "OrderProcessor",
+      "type": "Console Application",
+      "current_framework": ".NET Framework 4.8.1",
+      "framework_version": ".NET Framework 4.8.1",
+      "project_format": "Legacy (.NET Framework)",
+      "legacy_patterns": [
+        "System.Messaging (MSMQ)",
+        "Thread-based processing",
+        "App.config for configuration"
+      ],
+      "dependencies": [
+        "System.Messaging",
+        "System.Configuration"
+      ],
+      "migration_complexity": 5
+    }
+  ],
+  "key_challenges": [
+    {
+      "challenge": "ASP.NET MVC to ASP.NET Core MVC Migration",
+      "impact": "High",
+      "description": "Complete rewrite of web application from ASP.NET MVC 5 to ASP.NET Core MVC with different patterns and APIs"
+    },
+    {
+      "challenge": "WCF to Modern Service Communication",
+      "impact": "High",
+      "description": "WCF is not supported in .NET Core/.NET 5+. Need to migrate to gRPC, REST API, or CoreWCF"
+    },
+    {
+      "challenge": "MSMQ to Azure Service Bus",
+      "impact": "High",
+      "description": "MSMQ is Windows-specific and not available in Azure Container Apps. Need to migrate to Azure Service Bus"
+    },
+    {
+      "challenge": "Session State Management",
+      "impact": "Medium",
+      "description": "In-memory session state needs to be replaced with distributed cache (Redis) for container scalability"
+    },
+    {
+      "challenge": "Configuration System",
+      "impact": "Medium",
+      "description": "Web.config and App.config need to be replaced with appsettings.json and IConfiguration"
+    },
+    {
+      "challenge": "Containerization",
+      "impact": "Medium",
+      "description": "Applications need Dockerfiles for container deployment to Azure Container Apps"
+    }
+  ],
+  "recommended_approach": {
+    "strategy": "Incremental Migration",
+    "phases": [
+      {
+        "phase": 1,
+        "name": "Foundation",
+        "description": "Upgrade project files to SDK-style, update to .NET 10",
+        "tasks": [
+          "Convert projects to SDK-style .csproj format",
+          "Upgrade to .NET 10",
+          "Replace packages.config with PackageReference",
+          "Update configuration to appsettings.json"
+        ]
+      },
+      {
+        "phase": 2,
+        "name": "Service Layer Modernization",
+        "description": "Replace WCF with modern service communication",
+        "tasks": [
+          "Convert ProductServiceLibrary from WCF to ASP.NET Core Web API or gRPC",
+          "Update service contracts and implementations",
+          "Replace WCF client references with HTTP/gRPC clients"
+        ]
+      },
+      {
+        "phase": 3,
+        "name": "Web Application Migration",
+        "description": "Migrate ASP.NET MVC to ASP.NET Core MVC",
+        "tasks": [
+          "Create new ASP.NET Core MVC project structure",
+          "Migrate controllers, models, and views",
+          "Replace session state with distributed cache",
+          "Update routing and middleware",
+          "Migrate authentication/authorization if present"
+        ]
+      },
+      {
+        "phase": 4,
+        "name": "Messaging Modernization",
+        "description": "Replace MSMQ with Azure Service Bus",
+        "tasks": [
+          "Replace System.Messaging with Azure.Messaging.ServiceBus",
+          "Update OrderQueueService implementation",
+          "Update OrderProcessor to use Azure Service Bus",
+          "Configure Azure Service Bus queues"
+        ]
+      },
+      {
+        "phase": 5,
+        "name": "Containerization",
+        "description": "Add Docker support and deploy to Azure Container Apps",
+        "tasks": [
+          "Create Dockerfiles for each application",
+          "Add docker-compose for local development",
+          "Create Azure Container Apps configuration",
+          "Set up CI/CD pipeline for container deployment",
+          "Configure environment variables and secrets"
+        ]
+      }
+    ]
+  },
+  "estimated_effort": {
+    "total_days": "15-25 days",
+    "breakdown": {
+      "Foundation": "3-5 days",
+      "Service Layer Modernization": "3-5 days",
+      "Web Application Migration": "5-8 days",
+      "Messaging Modernization": "2-4 days",
+      "Containerization": "2-3 days"
+    }
+  },
+  "risks": [
+    {
+      "risk": "Breaking changes in ASP.NET Core",
+      "mitigation": "Thorough testing of all features after migration"
+    },
+    {
+      "risk": "Data loss during message queue migration",
+      "mitigation": "Run both systems in parallel during transition"
+    },
+    {
+      "risk": "Performance differences in new stack",
+      "mitigation": "Load testing before production deployment"
+    }
+  ],
+  "benefits": [
+    "Cross-platform compatibility",
+    "Better performance with .NET 10",
+    "Cloud-native architecture with Azure Container Apps",
+    "Horizontal scalability",
+    "Modern development patterns and tooling",
+    "Reduced infrastructure costs with containers",
+    "Improved maintainability"
+  ]
+}
