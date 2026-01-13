@@ -1,0 +1,190 @@
+name: CD
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Environment to deploy to'
+        required: true
+        default: 'dev'
+        type: choice
+        options:
+          - dev
+          - staging
+          - production
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  build-and-publish:
+    name: Build and Publish
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup NuGet
+        uses: NuGet/setup-nuget@v2
+        with:
+          nuget-version: 'latest'
+
+      - name: Setup MSBuild
+        uses: microsoft/setup-msbuild@v2
+
+      - name: Cache NuGet packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.nuget/packages
+          key: ${{ runner.os }}-nuget-${{ hashFiles('**/packages.config') }}
+          restore-keys: |
+            ${{ runner.os }}-nuget-
+
+      - name: Restore NuGet packages
+        run: nuget restore ProductCatalogApp.slnx
+
+      - name: Build solution
+        run: >
+          msbuild ProductCatalogApp.slnx /p:Configuration=Release
+          /p:Platform="Any CPU" /p:DeployOnBuild=true
+          /p:PublishProfile=FolderProfile /m
+
+      - name: Publish artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: deployment-package
+          path: ProductCatalog/bin/Release/
+          retention-days: 30
+
+  deploy-dev:
+    name: Deploy to Development
+    runs-on: ubuntu-latest
+    needs: build-and-publish
+    environment:
+      name: dev
+      url: https://dev-productcatalog.azurewebsites.net
+    if: |
+      github.event_name == 'push' ||
+      (github.event_name == 'workflow_dispatch' &&
+       github.event.inputs.environment == 'dev')
+
+    steps:
+      - name: Download artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: deployment-package
+          path: ./deployment-package
+
+      - name: Azure Login
+        uses: azure/login@v2
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      - name: Deploy to Azure Web App
+        uses: azure/webapps-deploy@v3
+        with:
+          app-name: 'productcatalog-dev'
+          package: ./deployment-package
+          resource-group-name: ${{ secrets.AZURE_RESOURCE_GROUP }}
+
+      - name: Azure Logout
+        run: az logout
+        if: always()
+
+  deploy-staging:
+    name: Deploy to Staging
+    runs-on: ubuntu-latest
+    needs: build-and-publish
+    environment:
+      name: staging
+      url: https://staging-productcatalog.azurewebsites.net
+    if: github.event_name == 'workflow_dispatch' && github.event.inputs.environment == 'staging'
+
+    steps:
+      - name: Download artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: deployment-package
+          path: ./deployment-package
+
+      - name: Azure Login
+        uses: azure/login@v2
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      - name: Deploy to Azure Web App
+        uses: azure/webapps-deploy@v3
+        with:
+          app-name: 'productcatalog-staging'
+          package: ./deployment-package
+          resource-group-name: ${{ secrets.AZURE_RESOURCE_GROUP }}
+
+      - name: Run smoke tests
+        run: |
+          echo "Running smoke tests against staging environment..."
+          # Add smoke test commands here
+          # For example: curl https://staging-productcatalog.azurewebsites.net/health
+
+      - name: Azure Logout
+        run: az logout
+        if: always()
+
+  deploy-production:
+    name: Deploy to Production
+    runs-on: ubuntu-latest
+    needs: build-and-publish
+    environment:
+      name: production
+      url: https://productcatalog.azurewebsites.net
+    if: github.event_name == 'workflow_dispatch' && github.event.inputs.environment == 'production'
+
+    steps:
+      - name: Download artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: deployment-package
+          path: ./deployment-package
+
+      - name: Azure Login
+        uses: azure/login@v2
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      - name: Create deployment slot
+        run: |
+          az webapp deployment slot create \
+            --name productcatalog-prod \
+            --resource-group ${{ secrets.AZURE_RESOURCE_GROUP }} \
+            --slot blue \
+            --configuration-source productcatalog-prod
+
+      - name: Deploy to blue slot
+        uses: azure/webapps-deploy@v3
+        with:
+          app-name: 'productcatalog-prod'
+          slot-name: 'blue'
+          package: ./deployment-package
+          resource-group-name: ${{ secrets.AZURE_RESOURCE_GROUP }}
+
+      - name: Run smoke tests on blue slot
+        run: |
+          echo "Running smoke tests against production blue slot..."
+          # Add smoke test commands here
+          # For example: curl https://productcatalog-prod-blue.azurewebsites.net/health
+
+      - name: Swap slots
+        run: |
+          az webapp deployment slot swap \
+            --name productcatalog-prod \
+            --resource-group ${{ secrets.AZURE_RESOURCE_GROUP }} \
+            --slot blue \
+            --target-slot production
+
+      - name: Azure Logout
+        run: az logout
+        if: always()
