@@ -36,7 +36,7 @@ jobs:
       - name: Cache NuGet packages
         uses: actions/cache@v4
         with:
-          path: ~/.nuget/packages
+          path: packages
           key: ${{ runner.os }}-nuget-${{ hashFiles('**/packages.config') }}
           restore-keys: |
             ${{ runner.os }}-nuget-
@@ -76,7 +76,7 @@ jobs:
       - name: Cache NuGet packages
         uses: actions/cache@v4
         with:
-          path: ~/.nuget/packages
+          path: packages
           key: ${{ runner.os }}-nuget-${{ hashFiles('**/packages.config') }}
           restore-keys: |
             ${{ runner.os }}-nuget-
@@ -96,7 +96,7 @@ jobs:
 
   security-scan:
     name: Security Scan
-    runs-on: ubuntu-latest
+    runs-on: windows-latest
     needs: build
 
     steps:
