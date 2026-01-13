@@ -5,22 +5,23 @@ This application now uses Microsoft Message Queuing (MSMQ) to handle order submi
 
 ## Manual Setup Required
 
-### 1. Add System.Messaging Reference to ProductCatalog Project
+### 1. Add Experimental.System.Messaging Package to ProductCatalog Project
 
-Since this is a .NET Framework 4.8.1 project, you need to manually add a reference to System.Messaging:
+Since this is now an ASP.NET Core project targeting .NET 10.0, we use the Experimental.System.Messaging NuGet package:
 
-**In Visual Studio:**
-1. Right-click on the `ProductCatalog` project in Solution Explorer
-2. Select "Add" > "Reference..."
-3. In the Reference Manager, select "Assemblies" > "Framework"
-4. Check the box next to "System.Messaging"
-5. Click OK
+**Via command line:**
+```bash
+cd ProductCatalog
+dotnet add package Experimental.System.Messaging
+```
 
 **OR via project file:**
-Add this to the ProductCatalog.csproj file inside an `<ItemGroup>`:
+The package is already included in ProductCatalog.csproj:
 ```xml
-<Reference Include="System.Messaging" />
+<PackageReference Include="Experimental.System.Messaging" Version="1.1.0" />
 ```
+
+**Note:** Experimental.System.Messaging is a community-maintained port of System.Messaging for .NET Core/.NET. It provides MSMQ functionality but is Windows-only.
 
 ### 2. Enable MSMQ on Windows
 
@@ -43,10 +44,14 @@ MSMQ must be installed and enabled on your Windows machine:
 
 The application uses a private queue named: `.\Private$\ProductCatalogOrders`
 
-This queue is automatically created when the first order is submitted. You can configure the queue path in Web.config:
+This queue is automatically created when the first order is submitted. You can configure the queue path in appsettings.json:
 
-```xml
-<add key="OrderQueuePath" value=".\Private$\ProductCatalogOrders" />
+```json
+{
+  "AppSettings": {
+    "OrderQueuePath": ".\\Private$\\ProductCatalogOrders"
+  }
+}
 ```
 
 ### 4. Viewing the Queue
