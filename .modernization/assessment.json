@@ -1,0 +1,342 @@
+{
+  "assessmentVersion": "1.0",
+  "timestamp": "2026-01-14T21:06:22.077Z",
+  "repository": {
+    "name": "ProductCatalogApp",
+    "owner": "bradygaster"
+  },
+  "targetPlatform": {
+    "framework": ".NET 10",
+    "deployment": "Azure Container Apps"
+  },
+  "currentState": {
+    "framework": ".NET Framework 4.8.1",
+    "projectType": "ASP.NET MVC 5 + WCF Service Library",
+    "projects": [
+      {
+        "name": "ProductCatalog",
+        "type": "ASP.NET MVC 5 Web Application",
+        "targetFramework": "v4.8.1",
+        "projectFormat": "Legacy (.NET Framework)",
+        "path": "ProductCatalog/ProductCatalog.csproj"
+      },
+      {
+        "name": "ProductServiceLibrary",
+        "type": "WCF Service Library",
+        "targetFramework": "v4.8.1",
+        "projectFormat": "Legacy (.NET Framework)",
+        "path": "ProductServiceLibrary/ProductServiceLibrary.csproj"
+      }
+    ]
+  },
+  "legacyPatterns": [
+    {
+      "category": "Framework",
+      "pattern": ".NET Framework 4.8.1",
+      "severity": "High",
+      "description": "Application uses .NET Framework 4.8.1, which is legacy and not cross-platform",
+      "impact": "Cannot run on Linux containers, limited to Windows Server",
+      "recommendation": "Migrate to .NET 10 for cross-platform support and modern runtime features",
+      "effort": "High",
+      "files": [
+        "ProductCatalog/ProductCatalog.csproj",
+        "ProductServiceLibrary/ProductServiceLibrary.csproj"
+      ]
+    },
+    {
+      "category": "Web Framework",
+      "pattern": "ASP.NET MVC 5",
+      "severity": "High",
+      "description": "Uses ASP.NET MVC 5 which is legacy and Windows-only",
+      "impact": "Not compatible with .NET Core/.NET 5+, requires IIS or Windows hosting",
+      "recommendation": "Migrate to ASP.NET Core MVC for modern, cross-platform web framework",
+      "effort": "High",
+      "files": [
+        "ProductCatalog/Controllers/HomeController.cs",
+        "ProductCatalog/Views/",
+        "ProductCatalog/Global.asax.cs",
+        "ProductCatalog/App_Start/"
+      ]
+    },
+    {
+      "category": "Service Architecture",
+      "pattern": "WCF (Windows Communication Foundation)",
+      "severity": "Critical",
+      "description": "Uses WCF for service communication, which is not supported in .NET Core/.NET 5+",
+      "impact": "WCF is legacy Windows-only technology, not available in modern .NET",
+      "recommendation": "Replace WCF with gRPC, REST APIs (Web API/Minimal APIs), or CoreWCF as interim solution",
+      "effort": "High",
+      "files": [
+        "ProductServiceLibrary/IProductService.cs",
+        "ProductServiceLibrary/ProductService.cs",
+        "ProductCatalog/Connected Services/ProductServiceReference/"
+      ]
+    },
+    {
+      "category": "Messaging",
+      "pattern": "MSMQ (Microsoft Message Queuing)",
+      "severity": "Critical",
+      "description": "Uses MSMQ for order queue processing, which is Windows-only",
+      "impact": "MSMQ not available in Linux containers or Azure Container Apps",
+      "recommendation": "Replace with Azure Service Bus, Azure Storage Queues, or RabbitMQ",
+      "effort": "Medium",
+      "files": [
+        "ProductCatalog/Services/OrderQueueService.cs",
+        "MSMQ_SETUP.md"
+      ]
+    },
+    {
+      "category": "Project Format",
+      "pattern": "Legacy .csproj format",
+      "severity": "Medium",
+      "description": "Uses old MSBuild project format with packages.config",
+      "impact": "Cannot use modern SDK-style projects features, verbose project files",
+      "recommendation": "Migrate to SDK-style project format with PackageReference",
+      "effort": "Low",
+      "files": [
+        "ProductCatalog/ProductCatalog.csproj",
+        "ProductServiceLibrary/ProductServiceLibrary.csproj",
+        "ProductCatalog/packages.config"
+      ]
+    },
+    {
+      "category": "Configuration",
+      "pattern": "Web.config / App.config",
+      "severity": "Medium",
+      "description": "Uses XML-based Web.config and App.config for configuration",
+      "impact": "Legacy configuration approach, not compatible with modern .NET",
+      "recommendation": "Migrate to appsettings.json and IConfiguration system",
+      "effort": "Low",
+      "files": [
+        "ProductCatalog/Web.config",
+        "ProductServiceLibrary/App.config"
+      ]
+    },
+    {
+      "category": "Dependency Injection",
+      "pattern": "No Built-in DI",
+      "severity": "Medium",
+      "description": "MVC 5 doesn't have built-in DI, uses manual instantiation or third-party containers",
+      "impact": "Missing modern dependency injection patterns",
+      "recommendation": "Adopt built-in DI in ASP.NET Core",
+      "effort": "Medium",
+      "files": [
+        "ProductCatalog/Controllers/HomeController.cs",
+        "ProductServiceLibrary/ProductService.cs"
+      ]
+    },
+    {
+      "category": "Session State",
+      "pattern": "In-Memory Session State",
+      "severity": "Medium",
+      "description": "Uses Session[] for cart storage, not suitable for distributed systems",
+      "impact": "Not scalable in containerized environments, lost on container restart",
+      "recommendation": "Use distributed cache (Redis) or database for session state",
+      "effort": "Low",
+      "files": [
+        "ProductCatalog/Controllers/HomeController.cs"
+      ]
+    },
+    {
+      "category": "Hosting",
+      "pattern": "IIS Hosting",
+      "severity": "High",
+      "description": "Designed for IIS hosting on Windows",
+      "impact": "Cannot run in Linux containers",
+      "recommendation": "Migrate to Kestrel web server for cross-platform hosting",
+      "effort": "High",
+      "files": [
+        "ProductCatalog/Web.config",
+        "ProductCatalog/ProductCatalog.csproj"
+      ]
+    },
+    {
+      "category": "Data Access",
+      "pattern": "In-Memory Repository",
+      "severity": "Low",
+      "description": "Uses in-memory data storage without persistence",
+      "impact": "Data lost on restart, not suitable for production",
+      "recommendation": "Implement proper database with Entity Framework Core or Dapper",
+      "effort": "Medium",
+      "files": [
+        "ProductServiceLibrary/ProductRepository.cs"
+      ]
+    }
+  ],
+  "modernizationPath": {
+    "strategy": "Incremental Migration",
+    "phases": [
+      {
+        "phase": 1,
+        "name": "Assessment & Planning",
+        "status": "In Progress",
+        "tasks": [
+          "Complete modernization assessment",
+          "Document current architecture",
+          "Identify migration blockers",
+          "Create detailed migration plan"
+        ]
+      },
+      {
+        "phase": 2,
+        "name": "Project Modernization",
+        "status": "Pending",
+        "tasks": [
+          "Upgrade to .NET 10 SDK-style projects",
+          "Convert ASP.NET MVC 5 to ASP.NET Core MVC",
+          "Migrate configuration to appsettings.json",
+          "Implement built-in dependency injection"
+        ]
+      },
+      {
+        "phase": 3,
+        "name": "Service Architecture Migration",
+        "status": "Pending",
+        "tasks": [
+          "Replace WCF with REST API or gRPC",
+          "Refactor service contracts to modern APIs",
+          "Update client to use HttpClient or gRPC client",
+          "Remove WCF dependencies"
+        ]
+      },
+      {
+        "phase": 4,
+        "name": "Infrastructure Modernization",
+        "status": "Pending",
+        "tasks": [
+          "Replace MSMQ with Azure Service Bus",
+          "Implement distributed session with Redis",
+          "Add database with Entity Framework Core",
+          "Configure Azure-native services"
+        ]
+      },
+      {
+        "phase": 5,
+        "name": "Containerization",
+        "status": "Pending",
+        "tasks": [
+          "Create Dockerfile for .NET 10 application",
+          "Configure container-optimized settings",
+          "Add health checks and readiness probes",
+          "Test container locally"
+        ]
+      },
+      {
+        "phase": 6,
+        "name": "Azure Container Apps Deployment",
+        "status": "Pending",
+        "tasks": [
+          "Create Azure Container Apps environment",
+          "Configure ingress and scaling rules",
+          "Set up managed identities for Azure services",
+          "Configure CI/CD pipeline",
+          "Deploy and validate"
+        ]
+      }
+    ]
+  },
+  "estimatedEffort": {
+    "total": "6-8 weeks",
+    "breakdown": {
+      "frameworkMigration": "2-3 weeks",
+      "wcfReplacement": "2-3 weeks",
+      "infrastructureModernization": "1-2 weeks",
+      "containerization": "3-5 days",
+      "azureDeployment": "3-5 days",
+      "testing": "1 week"
+    }
+  },
+  "risks": [
+    {
+      "risk": "WCF to REST/gRPC migration complexity",
+      "severity": "High",
+      "mitigation": "Consider CoreWCF as interim step, or design new API contracts carefully"
+    },
+    {
+      "risk": "MSMQ dependency on local Windows infrastructure",
+      "severity": "High",
+      "mitigation": "Identify all MSMQ usage patterns before migration, consider Azure Service Bus"
+    },
+    {
+      "risk": "Session state management in distributed environment",
+      "severity": "Medium",
+      "mitigation": "Implement Redis distributed cache early in migration"
+    },
+    {
+      "risk": "Views and front-end compatibility",
+      "severity": "Low",
+      "mitigation": "ASP.NET Core Razor views are mostly compatible, minimal changes needed"
+    }
+  ],
+  "recommendations": [
+    {
+      "priority": "High",
+      "category": "Quick Wins",
+      "recommendation": "Start with project file conversion to SDK-style and upgrade to .NET 10",
+      "benefit": "Enables modern tooling and simplifies build process"
+    },
+    {
+      "priority": "High",
+      "category": "Architecture",
+      "recommendation": "Replace WCF with ASP.NET Core Web API",
+      "benefit": "Modern, cross-platform REST API that works in containers"
+    },
+    {
+      "priority": "High",
+      "category": "Infrastructure",
+      "recommendation": "Replace MSMQ with Azure Service Bus",
+      "benefit": "Cloud-native messaging service that works in Azure Container Apps"
+    },
+    {
+      "priority": "Medium",
+      "category": "State Management",
+      "recommendation": "Implement Azure Redis Cache for distributed sessions",
+      "benefit": "Scalable session management for containerized apps"
+    },
+    {
+      "priority": "Medium",
+      "category": "Data Persistence",
+      "recommendation": "Add Azure SQL Database with Entity Framework Core",
+      "benefit": "Proper data persistence for production workloads"
+    },
+    {
+      "priority": "Low",
+      "category": "Observability",
+      "recommendation": "Add Application Insights for monitoring",
+      "benefit": "Better visibility into application performance and issues"
+    }
+  ],
+  "azureContainerAppsReadiness": {
+    "currentScore": "20%",
+    "targetScore": "100%",
+    "blockers": [
+      ".NET Framework 4.8.1 - requires Windows containers (not supported in Azure Container Apps)",
+      "WCF services - not available in .NET Core/.NET 5+",
+      "MSMQ - Windows-only messaging not available in Azure Container Apps",
+      "IIS dependencies - need to migrate to Kestrel"
+    ],
+    "required": [
+      "Migrate to .NET 10",
+      "Replace WCF with REST API or gRPC",
+      "Replace MSMQ with Azure Service Bus",
+      "Create Dockerfile for Linux containers",
+      "Configure health endpoints",
+      "Externalize configuration"
+    ]
+  },
+  "technicalDebt": {
+    "level": "High",
+    "items": [
+      "No automated tests",
+      "No CI/CD pipeline",
+      "No containerization",
+      "Legacy project format",
+      "Windows-only dependencies",
+      "In-memory data storage",
+      "No logging framework",
+      "No API versioning",
+      "No authentication/authorization",
+      "Hard-coded configuration values"
+    ]
+  }
+}
