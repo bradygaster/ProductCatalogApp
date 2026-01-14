@@ -5,11 +5,11 @@
     <RootNamespace>ProductServiceLibrary</RootNamespace>
     <AssemblyName>ProductServiceLibrary</AssemblyName>
     <LangVersion>latest</LangVersion>
-    <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
+    <Nullable>enable</Nullable>
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="System.ServiceModel.Primitives" Version="10.0.0" />
+    <PackageReference Include="System.ServiceModel.Primitives" Version="9.0.0" />
   </ItemGroup>
 
 </Project>
