@@ -1,0 +1,120 @@
+syntax = "proto3";
+
+option csharp_namespace = "ProductServiceGrpc";
+
+package product;
+
+import "google/protobuf/timestamp.proto";
+
+// The product service definition.
+service ProductService {
+  // Gets all products
+  rpc GetAllProducts (GetAllProductsRequest) returns (GetAllProductsResponse);
+  
+  // Gets a product by ID
+  rpc GetProductById (GetProductByIdRequest) returns (ProductResponse);
+  
+  // Gets products by category
+  rpc GetProductsByCategory (GetProductsByCategoryRequest) returns (GetProductsResponse);
+  
+  // Searches products
+  rpc SearchProducts (SearchProductsRequest) returns (GetProductsResponse);
+  
+  // Gets all categories
+  rpc GetCategories (GetCategoriesRequest) returns (GetCategoriesResponse);
+  
+  // Creates a new product
+  rpc CreateProduct (CreateProductRequest) returns (ProductResponse);
+  
+  // Updates an existing product
+  rpc UpdateProduct (UpdateProductRequest) returns (UpdateProductResponse);
+  
+  // Deletes a product
+  rpc DeleteProduct (DeleteProductRequest) returns (DeleteProductResponse);
+  
+  // Gets products by price range
+  rpc GetProductsByPriceRange (GetProductsByPriceRangeRequest) returns (GetProductsResponse);
+}
+
+// Product message
+message Product {
+  int32 id = 1;
+  string name = 2;
+  string description = 3;
+  double price = 4;
+  string category = 5;
+  string sku = 6;
+  int32 stock_quantity = 7;
+  string image_url = 8;
+  bool is_active = 9;
+  google.protobuf.Timestamp created_date = 10;
+  google.protobuf.Timestamp last_modified_date = 11;
+}
+
+// Category message
+message Category {
+  int32 id = 1;
+  string name = 2;
+  string description = 3;
+}
+
+// Request messages
+message GetAllProductsRequest {
+}
+
+message GetProductByIdRequest {
+  int32 product_id = 1;
+}
+
+message GetProductsByCategoryRequest {
+  string category = 1;
+}
+
+message SearchProductsRequest {
+  string search_term = 1;
+}
+
+message GetCategoriesRequest {
+}
+
+message CreateProductRequest {
+  Product product = 1;
+}
+
+message UpdateProductRequest {
+  Product product = 1;
+}
+
+message DeleteProductRequest {
+  int32 product_id = 1;
+}
+
+message GetProductsByPriceRangeRequest {
+  double min_price = 1;
+  double max_price = 2;
+}
+
+// Response messages
+message GetAllProductsResponse {
+  repeated Product products = 1;
+}
+
+message ProductResponse {
+  Product product = 1;
+}
+
+message GetProductsResponse {
+  repeated Product products = 1;
+}
+
+message GetCategoriesResponse {
+  repeated Category categories = 1;
+}
+
+message UpdateProductResponse {
+  bool success = 1;
+}
+
+message DeleteProductResponse {
+  bool success = 1;
+}
