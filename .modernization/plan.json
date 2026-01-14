@@ -1,6 +1,6 @@
 {
   "version": "1.0",
-  "generated_at": "2026-01-13T08:07:29.416902",
+  "generated_at": "2026-01-13T23:15:48.641073",
   "repository": "ProductCatalogApp",
   "complexity_score": 4,
   "total_tasks": 12,
@@ -13,8 +13,8 @@
   ],
   "detected_patterns": [
     "wcf_service",
-    "classic_mvc",
-    "msmq"
+    "msmq",
+    "classic_mvc"
   ],
   "tasks": [
     {
@@ -61,7 +61,7 @@
       "estimated_minutes": 15,
       "agent_hint": "Automated analysis - run detection tools",
       "started_at": null,
-      "completed_at": "2026-01-13T08:07:29.416776",
+      "completed_at": "2026-01-13T23:15:48.641007",
       "result": null,
       "branch": null,
       "pr_url": null
