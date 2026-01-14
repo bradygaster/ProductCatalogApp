@@ -253,8 +253,13 @@ await sender.SendMessageAsync(new ServiceBusMessage(JsonSerializer.Serialize(ord
 - Built-in NuGet package creation
 
 **Migration:**
-- Can be automated with conversion tools
-- Manual review recommended for complex projects
+- Use `dotnet try-convert` tool for automated conversion:
+  ```bash
+  dotnet tool install -g try-convert
+  try-convert -p ProductCatalog/ProductCatalog.csproj
+  ```
+- Alternatively, use Visual Studio's built-in migration assistant
+- Manual review recommended for complex projects to ensure all references are preserved
 
 **Effort:** 2-3 days
 
@@ -461,7 +466,9 @@ public async Task<IActionResult> AddToCart(int productId)
 
 ### Phase 2: Project Modernization (2-3 weeks)
 1. **Convert projects to SDK-style format** (2-3 days)
-   - Use conversion tools or manual migration
+   - Use `dotnet try-convert` tool (recommended): `dotnet tool install -g try-convert`
+   - Or use Visual Studio migration assistant (Project → Upgrade)
+   - Or manual conversion: create new SDK-style .csproj and migrate references
    - Convert packages.config to PackageReference
    - Test build and restore
 
