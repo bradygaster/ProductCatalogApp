@@ -1,0 +1,230 @@
+# Modernization Playbook
+# Generated from user request: "i'd like to update these apps to .net 10 and deploy them to azure container apps"
+
+version: 1.0
+metadata:
+  created: 2026-01-14T09:13:09.077Z
+  repository: bradygaster/ProductCatalogApp
+  assessment_type: interactive
+  user_preferences: defaults
+
+# Target Platform
+target:
+  framework: net10.0
+  runtime: linux-x64
+  deployment:
+    platform: azure-container-apps
+    region: eastus
+    containerRegistry: true
+
+# Migration Preferences (Microsoft Recommended Defaults)
+migrations:
+  
+  # WCF Services → gRPC
+  wcf:
+    strategy: grpc
+    reason: "Microsoft recommends gRPC as the modern, performant replacement for WCF"
+    services:
+      - name: ProductService
+        location: ProductServiceLibrary
+        contract: IProductService
+        target: gRPC service with ASP.NET Core
+        operations:
+          - GetAllProducts
+          - GetProductById
+          - GetProductsByCategory
+          - SearchProducts
+          - GetCategories
+          - CreateProduct
+          - UpdateProduct
+          - DeleteProduct
+          - GetProductsByPriceRange
+  
+  # MSMQ → Azure Service Bus
+  messaging:
+    strategy: azure-service-bus
+    reason: "Azure Service Bus is the Azure-native replacement for MSMQ with better scalability and cloud integration"
+    queues:
+      - name: ProductCatalogOrders
+        current: MSMQ private queue (.\Private$\ProductCatalogOrders)
+        target: Azure Service Bus Queue
+        usage: Order processing queue
+        class: OrderQueueService
+  
+  # ASP.NET MVC 5 → ASP.NET Core MVC
+  web:
+    strategy: aspnetcore-mvc
+    reason: "ASP.NET Core MVC maintains familiar patterns while modernizing to cross-platform, high-performance framework"
+    project: ProductCatalog
+    current_framework: net481
+    target_framework: net10.0
+    features:
+      - MVC Controllers
+      - Razor Views
+      - Bundling and Minification
+      - Bootstrap 5.2.3
+      - jQuery
+  
+  # Data Access
+  data:
+    strategy: in-memory-repository
+    reason: "Current implementation uses in-memory repository, no database migration needed"
+    note: "ProductRepository.cs maintains product catalog in memory"
+
+# Containerization Strategy
+containerization:
+  enabled: true
+  projects:
+    - name: ProductCatalog
+      type: web-app
+      baseImage: mcr.microsoft.com/dotnet/aspnet:10.0
+      buildImage: mcr.microsoft.com/dotnet/sdk:10.0
+      port: 8080
+      healthCheck: /health
+    
+    - name: ProductService
+      type: grpc-service
+      baseImage: mcr.microsoft.com/dotnet/aspnet:10.0
+      buildImage: mcr.microsoft.com/dotnet/sdk:10.0
+      port: 5000
+      protocol: http2
+
+# Azure Container Apps Configuration
+azure:
+  containerApps:
+    environment: productcatalog-env
+    workloadProfile: Consumption
+    
+    apps:
+      - name: productcatalog-web
+        source: ProductCatalog
+        ingress:
+          external: true
+          targetPort: 8080
+          transport: http
+        resources:
+          cpu: 0.5
+          memory: 1Gi
+        replicas:
+          min: 1
+          max: 10
+        env:
+          - name: ASPNETCORE_ENVIRONMENT
+            value: Production
+          - name: ProductServiceUrl
+            value: http://productservice-grpc:5000
+          - name: ServiceBusConnectionString
+            secretRef: servicebus-connection
+      
+      - name: productservice-grpc
+        source: ProductService
+        ingress:
+          external: false
+          targetPort: 5000
+          transport: http2
+        resources:
+          cpu: 0.5
+          memory: 1Gi
+        replicas:
+          min: 1
+          max: 5
+    
+    secrets:
+      - name: servicebus-connection
+        keyVaultRef: servicebus-connection-string
+
+# Migration Steps
+steps:
+  - phase: 1
+    name: Project Structure
+    tasks:
+      - Migrate ProductServiceLibrary to gRPC service with .NET 10
+      - Migrate ProductCatalog to ASP.NET Core MVC with .NET 10
+      - Update solution structure for SDK-style projects
+  
+  - phase: 2
+    name: Service Communication
+    tasks:
+      - Implement gRPC contracts from IProductService
+      - Generate gRPC client stubs
+      - Update ProductCatalog to use gRPC client
+  
+  - phase: 3
+    name: Messaging
+    tasks:
+      - Replace MSMQ with Azure Service Bus client
+      - Update OrderQueueService to use Azure.Messaging.ServiceBus
+      - Add configuration for Service Bus connection
+  
+  - phase: 4
+    name: Web Application
+    tasks:
+      - Migrate Controllers and Views to ASP.NET Core
+      - Update routing and middleware
+      - Migrate bundling to ASP.NET Core approach
+      - Update dependencies (Bootstrap, jQuery)
+  
+  - phase: 5
+    name: Containerization
+    tasks:
+      - Create Dockerfiles for both applications
+      - Test local container builds
+      - Optimize image sizes
+  
+  - phase: 6
+    name: Azure Deployment
+    tasks:
+      - Create Azure Container Apps environment
+      - Configure Azure Service Bus namespace
+      - Deploy containers to Azure Container Apps
+      - Configure ingress and networking
+      - Set up secrets and configuration
+  
+  - phase: 7
+    name: Testing & Validation
+    tasks:
+      - Verify gRPC communication
+      - Test order processing with Service Bus
+      - Load testing
+      - Security validation
+
+# Dependencies to Update
+dependencies:
+  remove:
+    - Microsoft.AspNet.Mvc
+    - Microsoft.AspNet.Razor
+    - Microsoft.AspNet.WebPages
+    - System.ServiceModel (WCF)
+    - System.Messaging (MSMQ)
+    - Microsoft.CodeDom.Providers.DotNetCompilerPlatform
+    - WebGrease
+    - Antlr
+  
+  add:
+    - Microsoft.AspNetCore.App (framework reference)
+    - Grpc.AspNetCore
+    - Grpc.Tools
+    - Azure.Messaging.ServiceBus
+    - Microsoft.AspNetCore.Grpc.HttpApi (for REST gateway if needed)
+
+# Considerations
+considerations:
+  breaking_changes:
+    - WCF client code must be replaced with gRPC
+    - MSMQ queue must be migrated to Azure Service Bus
+    - ASP.NET MVC configuration and startup differs from ASP.NET Core
+  
+  compatibility:
+    - Session state handling may need updates
+    - Authentication/authorization needs review
+    - Configuration system changes (Web.config → appsettings.json)
+  
+  testing:
+    - Unit tests for gRPC services
+    - Integration tests for Service Bus
+    - E2E tests for web application
+  
+  monitoring:
+    - Application Insights for telemetry
+    - Azure Monitor for container metrics
+    - Service Bus metrics and alerts

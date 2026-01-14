@@ -1,0 +1,492 @@
+{
+  "metadata": {
+    "repository": "bradygaster/ProductCatalogApp",
+    "assessmentDate": "2026-01-14T09:13:09.077Z",
+    "assessmentType": "interactive",
+    "version": "1.0",
+    "userRequest": "i'd like to update these apps to .net 10 and deploy them to azure container apps"
+  },
+  "currentState": {
+    "framework": {
+      "type": ".NET Framework",
+      "version": "4.8.1",
+      "targetFramework": "net481"
+    },
+    "projects": [
+      {
+        "name": "ProductCatalog",
+        "type": "ASP.NET MVC 5 Web Application",
+        "path": "ProductCatalog/ProductCatalog.csproj",
+        "framework": "net481",
+        "projectType": "classic",
+        "technologies": [
+          "ASP.NET MVC 5.2.9",
+          "Razor Views",
+          "WCF Client",
+          "MSMQ Client",
+          "Bootstrap 5.2.3",
+          "jQuery 3.7.0"
+        ]
+      },
+      {
+        "name": "ProductServiceLibrary",
+        "type": "WCF Service Library",
+        "path": "ProductServiceLibrary/ProductServiceLibrary.csproj",
+        "framework": "net481",
+        "projectType": "wcf-library",
+        "technologies": [
+          "WCF",
+          "System.ServiceModel",
+          "BasicHttpBinding"
+        ]
+      }
+    ],
+    "solution": {
+      "name": "ProductCatalogApp",
+      "path": "ProductCatalogApp.slnx",
+      "projectCount": 2
+    }
+  },
+  "legacyPatterns": {
+    "detected": [
+      {
+        "pattern": "WCF Service",
+        "severity": "high",
+        "complexity": "high",
+        "locations": [
+          {
+            "project": "ProductServiceLibrary",
+            "files": [
+              "IProductService.cs",
+              "ProductService.cs",
+              "App.config"
+            ],
+            "description": "WCF service with 9 operations using BasicHttpBinding"
+          },
+          {
+            "project": "ProductCatalog",
+            "files": [
+              "Connected Services/ProductServiceReference/Reference.cs"
+            ],
+            "description": "WCF client proxy consuming ProductService"
+          }
+        ],
+        "impact": {
+          "description": "WCF is not supported in .NET Core/.NET 5+",
+          "effortLevel": "high",
+          "estimatedHours": 16,
+          "risk": "medium"
+        },
+        "migrationPath": {
+          "recommended": "gRPC",
+          "alternatives": [
+            "REST API with ASP.NET Core Web API",
+            "CoreWCF (community project)"
+          ],
+          "reason": "gRPC is Microsoft's recommended modern alternative, offering high performance, strong typing, and cross-platform support"
+        },
+        "operations": [
+          "GetAllProducts",
+          "GetProductById",
+          "GetProductsByCategory",
+          "SearchProducts",
+          "GetCategories",
+          "CreateProduct",
+          "UpdateProduct",
+          "DeleteProduct",
+          "GetProductsByPriceRange"
+        ]
+      },
+      {
+        "pattern": "MSMQ",
+        "severity": "high",
+        "complexity": "medium",
+        "locations": [
+          {
+            "project": "ProductCatalog",
+            "files": [
+              "Services/OrderQueueService.cs"
+            ],
+            "description": "MSMQ queue for order processing using System.Messaging"
+          }
+        ],
+        "impact": {
+          "description": "MSMQ (System.Messaging) is Windows-only and not available in .NET Core/.NET 5+",
+          "effortLevel": "medium",
+          "estimatedHours": 8,
+          "risk": "low"
+        },
+        "migrationPath": {
+          "recommended": "Azure Service Bus",
+          "alternatives": [
+            "Azure Storage Queue",
+            "RabbitMQ",
+            "Apache Kafka"
+          ],
+          "reason": "Azure Service Bus is Azure-native, enterprise-grade messaging with similar queue semantics to MSMQ"
+        },
+        "queues": [
+          {
+            "name": "ProductCatalogOrders",
+            "path": ".\\Private$\\ProductCatalogOrders",
+            "usage": "Order submission and processing",
+            "messageType": "Order (XML serialized)"
+          }
+        ]
+      },
+      {
+        "pattern": "ASP.NET MVC 5 (Classic)",
+        "severity": "high",
+        "complexity": "medium",
+        "locations": [
+          {
+            "project": "ProductCatalog",
+            "files": [
+              "Global.asax",
+              "Global.asax.cs",
+              "Web.config",
+              "Controllers/HomeController.cs",
+              "Views/**/*.cshtml"
+            ],
+            "description": "Classic ASP.NET MVC 5.2.9 application with System.Web dependencies"
+          }
+        ],
+        "impact": {
+          "description": "ASP.NET MVC 5 runs only on .NET Framework with IIS/Windows",
+          "effortLevel": "medium",
+          "estimatedHours": 12,
+          "risk": "low"
+        },
+        "migrationPath": {
+          "recommended": "ASP.NET Core MVC",
+          "alternatives": [
+            "Blazor Server",
+            "Razor Pages"
+          ],
+          "reason": "ASP.NET Core MVC maintains similar patterns (Controllers, Views, Razor) making migration straightforward"
+        },
+        "controllers": [
+          "HomeController"
+        ],
+        "views": [
+          "Index",
+          "About",
+          "Contact",
+          "Cart",
+          "OrderConfirmation"
+        ]
+      },
+      {
+        "pattern": "Classic Project Format",
+        "severity": "medium",
+        "complexity": "low",
+        "locations": [
+          {
+            "project": "ProductCatalog",
+            "files": [
+              "ProductCatalog.csproj"
+            ],
+            "description": "Classic .csproj format with packages.config"
+          },
+          {
+            "project": "ProductServiceLibrary",
+            "files": [
+              "ProductServiceLibrary.csproj"
+            ],
+            "description": "Classic .csproj format for WCF library"
+          }
+        ],
+        "impact": {
+          "description": "Classic project format requires migration to SDK-style projects",
+          "effortLevel": "low",
+          "estimatedHours": 2,
+          "risk": "low"
+        },
+        "migrationPath": {
+          "recommended": "SDK-style projects",
+          "alternatives": [],
+          "reason": "SDK-style projects are the standard for .NET Core/.NET 5+ with simpler syntax and better tooling"
+        }
+      }
+    ],
+    "notDetected": [
+      "Entity Framework 6",
+      "WebForms",
+      "Windows Services",
+      "Remoting",
+      "App Domains",
+      "Code Access Security"
+    ]
+  },
+  "targetState": {
+    "framework": {
+      "type": ".NET",
+      "version": "10.0",
+      "targetFramework": "net10.0"
+    },
+    "projects": [
+      {
+        "name": "ProductCatalog.Web",
+        "type": "ASP.NET Core MVC Web Application",
+        "framework": "net10.0",
+        "projectType": "sdk",
+        "technologies": [
+          "ASP.NET Core MVC",
+          "Razor Views",
+          "gRPC Client",
+          "Azure Service Bus Client",
+          "Bootstrap 5",
+          "Minimal APIs (optional)"
+        ]
+      },
+      {
+        "name": "ProductService.Api",
+        "type": "gRPC Service",
+        "framework": "net10.0",
+        "projectType": "sdk",
+        "technologies": [
+          "gRPC",
+          "Grpc.AspNetCore",
+          "Protocol Buffers"
+        ]
+      }
+    ],
+    "deployment": {
+      "platform": "Azure Container Apps",
+      "containerization": true,
+      "orchestration": "Azure Container Apps (managed)",
+      "services": [
+        {
+          "name": "productcatalog-web",
+          "type": "Web Application",
+          "ingress": "external",
+          "port": 8080,
+          "protocol": "http"
+        },
+        {
+          "name": "productservice-grpc",
+          "type": "gRPC Service",
+          "ingress": "internal",
+          "port": 5000,
+          "protocol": "http2"
+        }
+      ],
+      "dependencies": [
+        {
+          "service": "Azure Service Bus",
+          "purpose": "Message queue for order processing",
+          "sku": "Standard"
+        },
+        {
+          "service": "Azure Container Registry",
+          "purpose": "Container image storage",
+          "sku": "Basic"
+        }
+      ]
+    }
+  },
+  "migrationStrategy": {
+    "approach": "Incremental",
+    "totalEstimatedHours": 40,
+    "complexity": "Medium-High",
+    "risk": "Medium",
+    "phases": [
+      {
+        "phase": 1,
+        "name": "Project Structure & Setup",
+        "estimatedHours": 4,
+        "tasks": [
+          "Create new SDK-style projects for .NET 10",
+          "Set up solution structure",
+          "Configure build and tooling"
+        ]
+      },
+      {
+        "phase": 2,
+        "name": "Migrate WCF to gRPC",
+        "estimatedHours": 16,
+        "tasks": [
+          "Define Protocol Buffer schemas from IProductService",
+          "Implement gRPC service",
+          "Create gRPC client for ProductCatalog",
+          "Test service communication"
+        ]
+      },
+      {
+        "phase": 3,
+        "name": "Migrate MSMQ to Azure Service Bus",
+        "estimatedHours": 8,
+        "tasks": [
+          "Replace System.Messaging with Azure.Messaging.ServiceBus",
+          "Update OrderQueueService implementation",
+          "Configure Service Bus connection strings",
+          "Test message sending and receiving"
+        ]
+      },
+      {
+        "phase": 4,
+        "name": "Migrate ASP.NET MVC to ASP.NET Core",
+        "estimatedHours": 12,
+        "tasks": [
+          "Migrate controllers and action methods",
+          "Port Razor views",
+          "Update routing and middleware",
+          "Migrate configuration from Web.config to appsettings.json",
+          "Update static file handling and bundling"
+        ]
+      },
+      {
+        "phase": 5,
+        "name": "Containerization",
+        "estimatedHours": 6,
+        "tasks": [
+          "Create Dockerfiles for both services",
+          "Test local Docker builds",
+          "Optimize container images",
+          "Create docker-compose for local testing"
+        ]
+      },
+      {
+        "phase": 6,
+        "name": "Azure Container Apps Deployment",
+        "estimatedHours": 8,
+        "tasks": [
+          "Provision Azure resources (Container Apps environment, Service Bus)",
+          "Configure container registry",
+          "Deploy containers to Azure Container Apps",
+          "Configure networking and ingress",
+          "Set up secrets and environment variables",
+          "Configure monitoring and logging"
+        ]
+      },
+      {
+        "phase": 7,
+        "name": "Testing & Validation",
+        "estimatedHours": 6,
+        "tasks": [
+          "End-to-end testing",
+          "Performance testing",
+          "Security validation",
+          "Documentation updates"
+        ]
+      }
+    ]
+  },
+  "dependencies": {
+    "current": {
+      "netFramework": [
+        "Microsoft.AspNet.Mvc@5.2.9",
+        "Microsoft.AspNet.Razor@3.2.9",
+        "Microsoft.AspNet.WebPages@3.2.9",
+        "Newtonsoft.Json@13.0.3",
+        "bootstrap@5.2.3",
+        "jQuery@3.7.0"
+      ],
+      "systemReferences": [
+        "System.ServiceModel",
+        "System.Messaging",
+        "System.Web",
+        "System.Web.Mvc"
+      ]
+    },
+    "target": {
+      "nuget": [
+        "Grpc.AspNetCore@2.60.0",
+        "Grpc.Tools@2.60.0",
+        "Azure.Messaging.ServiceBus@7.17.0",
+        "Microsoft.AspNetCore.OpenApi@10.0.0",
+        "Swashbuckle.AspNetCore@6.5.0"
+      ],
+      "frameworkReferences": [
+        "Microsoft.AspNetCore.App",
+        "Microsoft.NET.Sdk.Web"
+      ]
+    }
+  },
+  "risks": {
+    "high": [],
+    "medium": [
+      {
+        "category": "Service Communication",
+        "description": "WCF to gRPC migration requires protocol changes",
+        "mitigation": "Implement comprehensive integration tests, consider side-by-side deployment during transition"
+      },
+      {
+        "category": "Message Queue Migration",
+        "description": "MSMQ to Service Bus requires different connection patterns and may have in-flight messages",
+        "mitigation": "Plan migration window to process all MSMQ messages before cutover, implement retry logic"
+      }
+    ],
+    "low": [
+      {
+        "category": "View Migration",
+        "description": "Razor views are largely compatible but may have minor syntax differences",
+        "mitigation": "Test all views, review ASP.NET Core Razor documentation for differences"
+      },
+      {
+        "category": "Configuration",
+        "description": "Web.config to appsettings.json migration",
+        "mitigation": "Use Azure Key Vault for secrets, document all configuration changes"
+      }
+    ]
+  },
+  "benefits": {
+    "performance": [
+      "gRPC offers better performance than WCF BasicHttpBinding",
+      "ASP.NET Core has significantly better throughput than ASP.NET MVC 5",
+      "Azure Service Bus scales better than MSMQ"
+    ],
+    "operational": [
+      "Cross-platform deployment (Linux containers)",
+      "Smaller container images",
+      "Faster startup times",
+      "Better resource utilization with Azure Container Apps"
+    ],
+    "development": [
+      "Modern C# language features",
+      "Better tooling and IDE support",
+      "Active framework updates and security patches",
+      "Larger ecosystem of .NET packages"
+    ],
+    "cloud": [
+      "Azure-native services integration",
+      "Automatic scaling with Container Apps",
+      "Built-in health checks and monitoring",
+      "Simplified deployment with containers"
+    ]
+  },
+  "recommendations": [
+    {
+      "priority": "high",
+      "category": "Architecture",
+      "recommendation": "Implement health checks in both services for Container Apps readiness/liveness probes"
+    },
+    {
+      "priority": "high",
+      "category": "Security",
+      "recommendation": "Use Managed Identity for Azure Service Bus authentication instead of connection strings"
+    },
+    {
+      "priority": "medium",
+      "category": "Monitoring",
+      "recommendation": "Integrate Application Insights for distributed tracing across gRPC calls"
+    },
+    {
+      "priority": "medium",
+      "category": "Development",
+      "recommendation": "Set up CI/CD pipeline for automated container builds and deployments"
+    },
+    {
+      "priority": "low",
+      "category": "Enhancement",
+      "recommendation": "Consider adding OpenAPI/Swagger documentation alongside gRPC for REST gateway"
+    }
+  ],
+  "nextSteps": [
+    "Review and approve this assessment",
+    "Set up development environment with .NET 10 SDK",
+    "Create Azure resources (Resource Group, Container Apps environment, Service Bus)",
+    "Begin Phase 1: Project structure migration",
+    "Establish CI/CD pipeline early in the process"
+  ]
+}
