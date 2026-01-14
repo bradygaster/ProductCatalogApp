@@ -362,6 +362,7 @@ namespace ProductCatalog.ProductServiceReference {
     [System.CodeDom.Compiler.GeneratedCodeAttribute("System.ServiceModel", "4.0.0.0")]
     public partial class ProductServiceClient : System.ServiceModel.ClientBase<ProductCatalog.ProductServiceReference.IProductService>, ProductCatalog.ProductServiceReference.IProductService {
         
+        /*
         public ProductServiceClient() {
         }
         
@@ -376,6 +377,7 @@ namespace ProductCatalog.ProductServiceReference {
         public ProductServiceClient(string endpointConfigurationName, System.ServiceModel.EndpointAddress remoteAddress) : 
                 base(endpointConfigurationName, remoteAddress) {
         }
+        */
         
         public ProductServiceClient(System.ServiceModel.Channels.Binding binding, System.ServiceModel.EndpointAddress remoteAddress) : 
                 base(binding, remoteAddress) {

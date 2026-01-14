@@ -1,7 +1,6 @@
 using ProductCatalog.Models;
 using System;
-using System.Configuration;
-using System.Messaging;
+using Microsoft.Extensions.Configuration;
 
 namespace ProductCatalog.Services
 {
@@ -11,7 +10,13 @@ namespace ProductCatalog.Services
 
         public OrderQueueService()
         {
-            _queuePath = ConfigurationManager.AppSettings["OrderQueuePath"] ?? @".\Private$\ProductCatalogOrders";
+            _queuePath = @".\Private$\ProductCatalogOrders";
+            EnsureQueueExists();
+        }
+
+        public OrderQueueService(IConfiguration configuration)
+        {
+            _queuePath = configuration["AppSettings:OrderQueuePath"] ?? @".\Private$\ProductCatalogOrders";
             EnsureQueueExists();
         }
 
@@ -25,10 +30,9 @@ namespace ProductCatalog.Services
         {
             try
             {
-                if (!MessageQueue.Exists(_queuePath))
-                {
-                    MessageQueue.Create(_queuePath);
-                }
+                // MSMQ support in ASP.NET Core requires platform-specific implementation
+                // For now, we'll log that the queue is being used
+                System.Diagnostics.Debug.WriteLine($"Queue path configured: {_queuePath}");
             }
             catch (Exception ex)
             {
@@ -40,18 +44,17 @@ namespace ProductCatalog.Services
         {
             try
             {
-                using (MessageQueue queue = new MessageQueue(_queuePath))
-                {
-                    queue.Formatter = new XmlMessageFormatter(new Type[] { typeof(Order) });
-                    
-                    Message message = new Message(order)
-                    {
-                        Label = $"Order {order.OrderId}",
-                        Recoverable = true
-                    };
-
-                    queue.Send(message);
-                }
+                // MSMQ functionality - This requires System.Messaging which is Windows-specific
+                // In a real ASP.NET Core app, you would use a cross-platform queue like RabbitMQ or Azure Service Bus
+                // For now, we'll serialize the order to a file as a temporary measure
+                var ordersDirectory = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Orders");
+                Directory.CreateDirectory(ordersDirectory);
+                
+                var orderFile = Path.Combine(ordersDirectory, $"{order.OrderId}.json");
+                var orderJson = Newtonsoft.Json.JsonConvert.SerializeObject(order, Newtonsoft.Json.Formatting.Indented);
+                File.WriteAllText(orderFile, orderJson);
+                
+                System.Diagnostics.Debug.WriteLine($"Order {order.OrderId} saved to file: {orderFile}");
             }
             catch (Exception ex)
             {
@@ -63,17 +66,21 @@ namespace ProductCatalog.Services
         {
             try
             {
-                using (MessageQueue queue = new MessageQueue(_queuePath))
-                {
-                    queue.Formatter = new XmlMessageFormatter(new Type[] { typeof(Order) });
-                    
-                    Message message = queue.Receive(timeout);
-                    return (Order)message.Body;
-                }
-            }
-            catch (MessageQueueException ex) when (ex.MessageQueueErrorCode == MessageQueueErrorCode.IOTimeout)
-            {
-                return null;
+                // MSMQ functionality - simplified for ASP.NET Core
+                var ordersDirectory = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Orders");
+                if (!Directory.Exists(ordersDirectory))
+                    return null;
+                
+                var orderFiles = Directory.GetFiles(ordersDirectory, "*.json");
+                if (orderFiles.Length == 0)
+                    return null;
+                
+                var orderFile = orderFiles[0];
+                var orderJson = File.ReadAllText(orderFile);
+                var order = Newtonsoft.Json.JsonConvert.DeserializeObject<Order>(orderJson);
+                File.Delete(orderFile);
+                
+                return order;
             }
             catch (Exception ex)
             {
@@ -85,10 +92,11 @@ namespace ProductCatalog.Services
         {
             try
             {
-                using (MessageQueue queue = new MessageQueue(_queuePath))
-                {
-                    return queue.GetAllMessages().Length;
-                }
+                var ordersDirectory = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Orders");
+                if (!Directory.Exists(ordersDirectory))
+                    return 0;
+                
+                return Directory.GetFiles(ordersDirectory, "*.json").Length;
             }
             catch (Exception)
             {
