@@ -1,57 +1,63 @@
 using ProductCatalog.Models;
 using System;
 using System.Configuration;
-using System.Messaging;
+using System.Text.Json;
+using System.Threading.Tasks;
+using Azure.Messaging.ServiceBus;
 
 namespace ProductCatalog.Services
 {
-    public class OrderQueueService
+    public class OrderQueueService : IDisposable
     {
-        private readonly string _queuePath;
+        private readonly string _connectionString;
+        private readonly string _queueName;
+        private ServiceBusClient _client;
+        private ServiceBusSender _sender;
 
         public OrderQueueService()
         {
-            _queuePath = ConfigurationManager.AppSettings["OrderQueuePath"] ?? @".\Private$\ProductCatalogOrders";
-            EnsureQueueExists();
+            _connectionString = ConfigurationManager.AppSettings["ServiceBus:ConnectionString"] 
+                ?? throw new InvalidOperationException("ServiceBus:ConnectionString not configured");
+            _queueName = ConfigurationManager.AppSettings["ServiceBus:QueueName"] 
+                ?? "productcatalogorders";
+            
+            InitializeClient();
         }
 
-        public OrderQueueService(string queuePath)
+        public OrderQueueService(string connectionString, string queueName)
         {
-            _queuePath = queuePath;
-            EnsureQueueExists();
+            _connectionString = connectionString ?? throw new ArgumentNullException(nameof(connectionString));
+            _queueName = queueName ?? throw new ArgumentNullException(nameof(queueName));
+            
+            InitializeClient();
         }
 
-        private void EnsureQueueExists()
+        private void InitializeClient()
         {
             try
             {
-                if (!MessageQueue.Exists(_queuePath))
-                {
-                    MessageQueue.Create(_queuePath);
-                }
+                _client = new ServiceBusClient(_connectionString);
+                _sender = _client.CreateSender(_queueName);
             }
             catch (Exception ex)
             {
-                throw new InvalidOperationException($"Failed to create or access message queue at {_queuePath}", ex);
+                throw new InvalidOperationException($"Failed to initialize Service Bus client for queue {_queueName}", ex);
             }
         }
 
-        public void SendOrder(Order order)
+        public async Task SendOrderAsync(Order order)
         {
             try
             {
-                using (MessageQueue queue = new MessageQueue(_queuePath))
+                var messageBody = JsonSerializer.Serialize(order);
+                var message = new ServiceBusMessage(messageBody)
                 {
-                    queue.Formatter = new XmlMessageFormatter(new Type[] { typeof(Order) });
-                    
-                    Message message = new Message(order)
-                    {
-                        Label = $"Order {order.OrderId}",
-                        Recoverable = true
-                    };
+                    Subject = $"Order {order.OrderId}",
+                    MessageId = order.OrderId,
+                    ContentType = "application/json"
+                };
 
-                    queue.Send(message);
-                }
+                await _sender.SendMessageAsync(message);
             }
             catch (Exception ex)
             {
@@ -59,19 +65,31 @@ namespace ProductCatalog.Services
             }
         }
 
-        public Order ReceiveOrder(TimeSpan timeout)
+        // Synchronous wrapper for backward compatibility
+        public void SendOrder(Order order)
         {
+            SendOrderAsync(order).GetAwaiter().GetResult();
+        }
+
+        public async Task<Order> ReceiveOrderAsync(TimeSpan timeout)
+        {
+            ServiceBusReceiver receiver = null;
             try
             {
-                using (MessageQueue queue = new MessageQueue(_queuePath))
+                receiver = _client.CreateReceiver(_queueName);
+                var message = await receiver.ReceiveMessageAsync(timeout);
+                
+                if (message == null)
                 {
-                    queue.Formatter = new XmlMessageFormatter(new Type[] { typeof(Order) });
-                    
-                    Message message = queue.Receive(timeout);
-                    return (Order)message.Body;
+                    return null;
                 }
+
+                var order = JsonSerializer.Deserialize<Order>(message.Body.ToString());
+                await receiver.CompleteMessageAsync(message);
+                
+                return order;
             }
-            catch (MessageQueueException ex) when (ex.MessageQueueErrorCode == MessageQueueErrorCode.IOTimeout)
+            catch (Exception ex) when (ex is TaskCanceledException || ex is TimeoutException)
             {
                 return null;
             }
@@ -79,21 +97,54 @@ namespace ProductCatalog.Services
             {
                 throw new InvalidOperationException("Failed to receive order from queue", ex);
             }
+            finally
+            {
+                if (receiver != null)
+                {
+                    await receiver.DisposeAsync();
+                }
+            }
         }
 
-        public int GetQueueMessageCount()
+        // Synchronous wrapper for backward compatibility
+        public Order ReceiveOrder(TimeSpan timeout)
+        {
+            return ReceiveOrderAsync(timeout).GetAwaiter().GetResult();
+        }
+
+        public async Task<int> GetQueueMessageCountAsync()
         {
             try
             {
-                using (MessageQueue queue = new MessageQueue(_queuePath))
+                var receiver = _client.CreateReceiver(_queueName);
+                var count = 0;
+                
+                // Note: Service Bus doesn't provide direct message count API
+                // This is a simplified implementation that peeks messages
+                await foreach (var message in receiver.PeekMessagesAsync(100))
                 {
-                    return queue.GetAllMessages().Length;
+                    count++;
                 }
+                
+                await receiver.DisposeAsync();
+                return count;
             }
             catch (Exception)
             {
                 return 0;
             }
+        }
+
+        // Synchronous wrapper for backward compatibility
+        public int GetQueueMessageCount()
+        {
+            return GetQueueMessageCountAsync().GetAwaiter().GetResult();
+        }
+
+        public void Dispose()
+        {
+            _sender?.DisposeAsync().GetAwaiter().GetResult();
+            _client?.DisposeAsync().GetAwaiter().GetResult();
         }
     }
 }

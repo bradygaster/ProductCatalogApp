@@ -1,62 +1,58 @@
-# MSMQ Order Processing Setup
+# Azure Service Bus Order Processing
 
 ## Overview
-This application now uses Microsoft Message Queuing (MSMQ) to handle order submissions asynchronously. When a customer clicks "Proceed to Checkout", the order is serialized and placed on an MSMQ queue for backend processing.
+This application uses **Azure Service Bus** to handle order submissions asynchronously. When a customer clicks "Proceed to Checkout", the order is serialized to JSON and placed on an Azure Service Bus queue for backend processing.
 
-## Manual Setup Required
+> **Migration Note**: This application was previously using MSMQ (Microsoft Message Queuing) and has been modernized to use Azure Service Bus for better scalability, reliability, and cloud-native architecture.
 
-### 1. Add System.Messaging Reference to ProductCatalog Project
+## Setup Requirements
 
-Since this is a .NET Framework 4.8.1 project, you need to manually add a reference to System.Messaging:
+### 1. Azure Service Bus Resources
 
-**In Visual Studio:**
-1. Right-click on the `ProductCatalog` project in Solution Explorer
-2. Select "Add" > "Reference..."
-3. In the Reference Manager, select "Assemblies" > "Framework"
-4. Check the box next to "System.Messaging"
-5. Click OK
+Deploy the required Azure resources using the Bicep template:
 
-**OR via project file:**
-Add this to the ProductCatalog.csproj file inside an `<ItemGroup>`:
-```xml
-<Reference Include="System.Messaging" />
+```bash
+# Login to Azure
+az login
+
+# Create a resource group (if not exists)
+az group create --name rg-productcatalog --location eastus
+
+# Deploy the Service Bus infrastructure
+az deployment group create \
+  --resource-group rg-productcatalog \
+  --template-file infrastructure/service-bus.bicep \
+  --parameters serviceBusSku=Standard
 ```
 
-### 2. Enable MSMQ on Windows
+Alternatively, you can create the resources manually in the Azure Portal:
+1. Create a Service Bus namespace (Standard or Premium tier recommended)
+2. Create a queue named `productcatalogorders`
+3. Copy the connection string from the namespace settings
 
-MSMQ must be installed and enabled on your Windows machine:
+### 2. Add NuGet Packages
 
-**Windows 10/11:**
-1. Open "Control Panel" > "Programs" > "Turn Windows features on or off"
-2. Expand "Microsoft Message Queue (MSMQ) Server"
-3. Check "Microsoft Message Queue (MSMQ) Server Core"
-4. Click OK and let Windows install the feature
-5. Restart if prompted
+The following NuGet packages are required and already added to the project:
+- `Azure.Messaging.ServiceBus` (v7.18.1)
+- `System.Text.Json` (v8.0.4)
+- Supporting packages (Azure.Core, System.Memory, etc.)
 
-**Windows Server:**
-1. Open Server Manager
-2. Add Roles and Features
-3. Select "Message Queuing" under Features
-4. Complete the installation
+### 3. Configure Connection String
 
-### 3. Queue Configuration
-
-The application uses a private queue named: `.\Private$\ProductCatalogOrders`
-
-This queue is automatically created when the first order is submitted. You can configure the queue path in Web.config:
+Update the `Web.config` file with your Service Bus connection string:
 
 ```xml
-<add key="OrderQueuePath" value=".\Private$\ProductCatalogOrders" />
+<appSettings>
+  <add key="ServiceBus:ConnectionString" value="Endpoint=sb://your-namespace.servicebus.windows.net/;SharedAccessKeyName=RootManageSharedAccessKey;SharedAccessKey=your-key" />
+  <add key="ServiceBus:QueueName" value="productcatalogorders" />
+</appSettings>
 ```
 
-### 4. Viewing the Queue
-
-To view messages in the queue:
-1. Open Computer Management (compmgmt.msc)
-2. Expand "Services and Applications" > "Message Queuing"
-3. Expand "Private Queues"
-4. Find "productcatalogorders"
-5. Right-click > "Message Queue Messages" to view queued orders
+**Production Best Practice**: Store the connection string in Azure Key Vault:
+1. Create an Azure Key Vault
+2. Add the connection string as a secret
+3. Use Azure App Configuration or Key Vault references in your app
+4. Consider using Managed Identity for passwordless authentication
 
 ## How It Works
 
@@ -64,45 +60,180 @@ To view messages in the queue:
 
 1. Customer adds items to cart
 2. Customer clicks "Proceed to Checkout" on Cart page
-3. `HomeController.SubmitOrder()` action is called
+3. `HomeController.SubmitOrder()` async action is called
 4. Order is created from cart items with totals calculated
-5. `OrderQueueService.SendOrder()` serializes the order to XML and sends it to MSMQ
+5. `OrderQueueService.SendOrderAsync()` serializes the order to JSON and sends it to Azure Service Bus
 6. Cart is cleared and customer sees confirmation page
 
 ### Backend (Order Processor)
 
-A separate backend application (console app or Windows Service) can process orders:
+A separate backend application can process orders using `ServiceBusProcessor`:
 
-1. Continuously polls the MSMQ queue using `OrderQueueService.ReceiveOrder()`
-2. Processes each order (payment, inventory update, shipping, etc.)
-3. Sends confirmation emails
-4. Updates order status in database
+```csharp
+var client = new ServiceBusClient(connectionString);
+var processor = client.CreateProcessor(queueName);
 
-See the `OrderProcessor` console application in this solution for a working example.
+processor.ProcessMessageAsync += async args =>
+{
+    var orderJson = args.Message.Body.ToString();
+    var order = JsonSerializer.Deserialize<Order>(orderJson);
+    
+    // Process order (payment, inventory, shipping, etc.)
+    await ProcessOrderAsync(order);
+    
+    // Complete the message
+    await args.CompleteMessageAsync(args.Message);
+};
 
-## Files Added
+processor.ProcessErrorAsync += async args =>
+{
+    Console.WriteLine($"Error: {args.Exception.Message}");
+    // Implement error handling/logging
+};
 
-- **Models/Order.cs** - Order and OrderItem models (serializable for MSMQ)
-- **Services/OrderQueueService.cs** - MSMQ service for sending/receiving orders
-- **Views/Home/OrderConfirmation.cshtml** - Order confirmation page
-- **HomeController.cs** - Added SubmitOrder() and OrderConfirmation() actions
-- **OrderProcessor/** - Backend console app to process queued orders
+await processor.StartProcessingAsync();
+```
+
+## Key Features
+
+### Message Serialization
+- **Format**: JSON (replaced XML/BinaryFormatter for security and compatibility)
+- **Library**: System.Text.Json
+- **Benefits**: Cross-platform, secure, human-readable
+
+### Error Handling
+- **Dead Letter Queue**: Automatically enabled for failed messages
+- **Max Delivery Count**: 10 attempts before moving to DLQ
+- **Message Lock Duration**: 5 minutes for processing
+- **TTL**: 14 days message retention
+
+### Scalability
+- **Auto-scaling**: Azure Service Bus scales automatically
+- **Concurrent Processing**: Configure max concurrent calls
+- **Partitioning**: Optional for higher throughput
+- **Sessions**: Disabled (can be enabled for ordered processing)
+
+## Monitoring
+
+### View Messages in Azure Portal
+1. Navigate to your Service Bus namespace
+2. Select "Queues" from the left menu
+3. Click on `productcatalogorders`
+4. View active messages, dead-letter messages, and metrics
+
+### Enable Diagnostics
+```bash
+az monitor diagnostic-settings create \
+  --resource /subscriptions/{sub-id}/resourceGroups/rg-productcatalog/providers/Microsoft.ServiceBus/namespaces/{namespace} \
+  --name servicebus-diagnostics \
+  --logs '[{"category": "OperationalLogs", "enabled": true}]'
+```
+
+### Metrics to Monitor
+- **Active Messages**: Current queue depth
+- **Incoming Messages**: Orders submitted per second
+- **Outgoing Messages**: Orders processed per second
+- **Dead Letter Messages**: Failed processing attempts
+- **Server Errors**: Service Bus errors
+- **User Errors**: Client/application errors
 
 ## Testing
 
-1. Ensure MSMQ is installed and running
-2. Build and run the ProductCatalog web application
-3. Add items to cart
-4. Click "Proceed to Checkout"
-5. Verify order appears in MSMQ (Computer Management)
-6. Run the OrderProcessor console app to process the order
+### Local Development
+1. Ensure Azure Service Bus namespace is created
+2. Update `Web.config` with valid connection string
+3. Build and run the ProductCatalog web application
+4. Add items to cart
+5. Click "Proceed to Checkout"
+6. Verify order appears in Azure Portal (Service Bus Queue)
+
+### Integration Testing
+```csharp
+// Example test
+var testOrder = new Order { /* ... */ };
+var queueService = new OrderQueueService(connectionString, queueName);
+await queueService.SendOrderAsync(testOrder);
+
+// Verify message in queue
+var receivedOrder = await queueService.ReceiveOrderAsync(TimeSpan.FromSeconds(30));
+Assert.IsNotNull(receivedOrder);
+Assert.AreEqual(testOrder.OrderId, receivedOrder.OrderId);
+```
+
+## Migration from MSMQ
+
+The following changes were made during migration:
+
+### Code Changes
+- ✅ Replaced `System.Messaging` with `Azure.Messaging.ServiceBus`
+- ✅ Changed serialization from XML to JSON
+- ✅ Updated to async/await pattern
+- ✅ Added proper error handling and retry logic
+- ✅ Implemented IDisposable pattern for resource cleanup
+
+### Configuration Changes
+- ✅ Added `ServiceBus:ConnectionString` to Web.config
+- ✅ Added `ServiceBus:QueueName` to Web.config
+- ✅ Kept legacy `OrderQueuePath` for reference (deprecated)
+
+### Infrastructure Changes
+- ✅ Created `infrastructure/service-bus.bicep` for Azure deployment
+- ✅ Documented deployment and configuration procedures
+
+### Benefits of Migration
+- **Cloud-Native**: Fully managed service, no infrastructure to maintain
+- **Scalability**: Auto-scales based on load
+- **Reliability**: Built-in redundancy and disaster recovery
+- **Security**: TLS 1.2+, Azure AD integration, Managed Identity support
+- **Monitoring**: Rich metrics and diagnostics
+- **Cost-Effective**: Pay only for what you use
 
 ## Production Considerations
 
-- Implement proper error handling and dead letter queue monitoring
-- Add order persistence to database before/after queuing
-- Implement retry logic for failed messages
-- Set up transactional queues for critical operations
-- Monitor queue depth and processing times
-- Consider using Windows Service for backend processor
-- Implement proper logging and alerting
+- ✅ Store connection strings in Azure Key Vault
+- ✅ Use Managed Identity instead of connection strings
+- ✅ Implement comprehensive error handling
+- ✅ Set up monitoring and alerts
+- ✅ Configure dead letter queue processing
+- ✅ Implement message versioning for schema changes
+- ✅ Add logging for troubleshooting
+- ✅ Test failover scenarios
+- ✅ Document runbooks for common issues
+- ✅ Set up backup and disaster recovery
+
+## Files Modified
+
+- **Services/OrderQueueService.cs** - Migrated from MSMQ to Service Bus
+- **Controllers/HomeController.cs** - Updated to async/await pattern
+- **Web.config** - Added Service Bus configuration
+- **ProductCatalog.csproj** - Removed System.Messaging, added Service Bus SDK
+- **packages.config** - Added Azure Service Bus packages
+
+## Files Created
+
+- **infrastructure/service-bus.bicep** - Azure infrastructure as code
+- **infrastructure/README.md** - Infrastructure documentation
+
+## Troubleshooting
+
+### Common Issues
+
+**Error: "ServiceBus:ConnectionString not configured"**
+- Solution: Ensure Web.config has valid Service Bus connection string
+
+**Error: "Unauthorized access"**
+- Solution: Verify connection string has correct permissions (Send/Listen)
+
+**Error: "Queue not found"**
+- Solution: Ensure queue name matches in both Azure and Web.config
+
+**Messages going to Dead Letter Queue**
+- Solution: Check `ProcessErrorAsync` logs for processing errors
+- Verify message format is correct JSON
+- Check max delivery count settings
+
+### Support Resources
+- [Azure Service Bus Documentation](https://docs.microsoft.com/azure/service-bus-messaging/)
+- [Best Practices](https://docs.microsoft.com/azure/service-bus-messaging/service-bus-performance-improvements)
+- [Troubleshooting Guide](https://docs.microsoft.com/azure/service-bus-messaging/service-bus-messaging-exceptions)
+

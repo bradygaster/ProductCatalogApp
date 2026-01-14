@@ -151,7 +151,7 @@ namespace ProductCatalog.Controllers
         }
 
         [HttpPost]
-        public ActionResult SubmitOrder()
+        public async System.Threading.Tasks.Task<ActionResult> SubmitOrder()
         {
             try
             {
@@ -193,9 +193,11 @@ namespace ProductCatalog.Controllers
                     });
                 }
 
-                // Send order to MSMQ
-                var queueService = new OrderQueueService();
-                queueService.SendOrder(order);
+                // Send order to Azure Service Bus
+                using (var queueService = new OrderQueueService())
+                {
+                    await queueService.SendOrderAsync(order);
+                }
 
                 // Clear the cart
                 Session["Cart"] = new List<CartItem>();
