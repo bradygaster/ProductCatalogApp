@@ -13,7 +13,7 @@ namespace ProductCatalog.Models
         public decimal Tax { get; set; }
         public decimal Shipping { get; set; }
         public decimal Total { get; set; }
-        public string CustomerSessionId { get; set; }
+        public string CustomerSessionId { get; set; } = string.Empty;
 
         public Order()
         {
@@ -27,8 +27,8 @@ namespace ProductCatalog.Models
     public class OrderItem
     {
         public int ProductId { get; set; }
-        public string ProductName { get; set; }
-        public string SKU { get; set; }
+        public string ProductName { get; set; } = string.Empty;
+        public string SKU { get; set; } = string.Empty;
         public decimal Price { get; set; }
         public int Quantity { get; set; }
         public decimal Subtotal { get; set; }
