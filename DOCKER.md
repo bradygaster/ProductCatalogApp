@@ -134,10 +134,22 @@ Windows containers require significant resources:
 
 The included `docker-compose.override.yml` is for local development only. For production:
 1. Remove or replace the override file
-2. Use secrets management for passwords
+2. Use Docker secrets or Azure Key Vault for password management
 3. Configure proper SSL certificates
 4. Set appropriate resource limits
 5. Use external database services when possible
+6. Never pass passwords directly in environment variables that may be logged
+
+**Production Security:**
+```yaml
+# Example using Docker secrets (Docker Swarm or Kubernetes)
+secrets:
+  - sql_sa_password
+  
+# Reference in service:
+environment:
+  - SA_PASSWORD_FILE=/run/secrets/sql_sa_password
+```
 
 ## Troubleshooting
 
