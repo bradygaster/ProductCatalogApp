@@ -1,0 +1,324 @@
+{
+  "assessment_version": "1.0",
+  "assessment_date": "2026-01-16T21:53:47.044Z",
+  "repository": {
+    "name": "ProductCatalogApp",
+    "owner": "bradygaster"
+  },
+  "user_request": "upgrade this app to .net 10 and ready it for deployment to azure container apps. migrate all the msmq functionality to azure service bus",
+  "current_state": {
+    "framework": {
+      "type": ".NET Framework",
+      "version": "4.8.1",
+      "platform": "Windows"
+    },
+    "project_structure": {
+      "total_projects": 2,
+      "project_types": [
+        {
+          "name": "ProductCatalog",
+          "type": "ASP.NET MVC Web Application",
+          "framework": ".NET Framework 4.8.1",
+          "project_format": "classic-csproj"
+        },
+        {
+          "name": "ProductServiceLibrary",
+          "type": "WCF Service Library",
+          "framework": ".NET Framework 4.8.1",
+          "project_format": "classic-csproj"
+        }
+      ]
+    },
+    "code_metrics": {
+      "total_cs_files": 16,
+      "total_lines_of_code": 1776,
+      "complexity": "low-to-medium"
+    },
+    "technologies": {
+      "web_framework": "ASP.NET MVC 5.2.9",
+      "service_framework": "WCF (Windows Communication Foundation)",
+      "messaging": "MSMQ (Microsoft Message Queuing)",
+      "session_management": "In-Memory Session State",
+      "dependencies": [
+        "System.ServiceModel (WCF)",
+        "System.Messaging (MSMQ)",
+        "Microsoft.AspNet.Mvc 5.2.9",
+        "Newtonsoft.Json 13.0.3",
+        "jQuery 3.7.0",
+        "Bootstrap 5.x"
+      ]
+    }
+  },
+  "legacy_patterns": [
+    {
+      "pattern": ".NET Framework 4.8.1",
+      "category": "framework",
+      "severity": "high",
+      "impact": "Blocks containerization and cross-platform deployment",
+      "modernization_path": "Migrate to .NET 10",
+      "effort": "high",
+      "files_affected": [
+        "ProductCatalog/ProductCatalog.csproj",
+        "ProductServiceLibrary/ProductServiceLibrary.csproj"
+      ]
+    },
+    {
+      "pattern": "ASP.NET MVC (System.Web)",
+      "category": "web-framework",
+      "severity": "high",
+      "impact": "Tied to Windows/IIS, cannot run in containers without Windows containers",
+      "modernization_path": "Migrate to ASP.NET Core MVC",
+      "effort": "high",
+      "files_affected": [
+        "ProductCatalog/Controllers/HomeController.cs",
+        "ProductCatalog/Global.asax.cs",
+        "ProductCatalog/App_Start/*.cs",
+        "ProductCatalog/Views/**/*.cshtml"
+      ]
+    },
+    {
+      "pattern": "WCF Service",
+      "category": "service-communication",
+      "severity": "high",
+      "impact": "Not supported in .NET Core/5+, limited cross-platform support",
+      "modernization_path": "Migrate to gRPC",
+      "effort": "medium",
+      "files_affected": [
+        "ProductServiceLibrary/IProductService.cs",
+        "ProductServiceLibrary/ProductService.cs",
+        "ProductCatalog/Connected Services/ProductServiceReference/*"
+      ]
+    },
+    {
+      "pattern": "MSMQ (Microsoft Message Queuing)",
+      "category": "messaging",
+      "severity": "high",
+      "impact": "Windows-only, not available in Azure Container Apps",
+      "modernization_path": "Migrate to Azure Service Bus",
+      "effort": "medium",
+      "files_affected": [
+        "ProductCatalog/Services/OrderQueueService.cs"
+      ]
+    },
+    {
+      "pattern": "Classic csproj format",
+      "category": "project-format",
+      "severity": "medium",
+      "impact": "Verbose, not compatible with .NET Core/5+",
+      "modernization_path": "Convert to SDK-style csproj",
+      "effort": "low",
+      "files_affected": [
+        "ProductCatalog/ProductCatalog.csproj",
+        "ProductServiceLibrary/ProductServiceLibrary.csproj"
+      ]
+    },
+    {
+      "pattern": "In-Memory Session State",
+      "category": "state-management",
+      "severity": "medium",
+      "impact": "Not suitable for distributed/containerized environments",
+      "modernization_path": "Use distributed cache (Redis)",
+      "effort": "medium",
+      "files_affected": [
+        "ProductCatalog/Controllers/HomeController.cs"
+      ]
+    },
+    {
+      "pattern": "packages.config",
+      "category": "dependency-management",
+      "severity": "low",
+      "impact": "Old NuGet package management style",
+      "modernization_path": "Use PackageReference in csproj",
+      "effort": "low",
+      "files_affected": [
+        "ProductCatalog/packages.config"
+      ]
+    }
+  ],
+  "target_state": {
+    "framework": {
+      "type": ".NET",
+      "version": "10.0",
+      "platform": "Cross-platform (Linux containers)"
+    },
+    "compute": {
+      "platform": "Azure Container Apps",
+      "container_runtime": "Linux",
+      "orchestration": "Dapr-enabled"
+    },
+    "technologies": {
+      "web_framework": "ASP.NET Core MVC 10.0",
+      "service_framework": "gRPC",
+      "messaging": "Azure Service Bus (via Dapr pub/sub)",
+      "session_management": "Distributed cache (Redis)",
+      "containerization": "Docker"
+    }
+  },
+  "migration_recommendations": [
+    {
+      "phase": 1,
+      "name": "Foundation Modernization",
+      "priority": "critical",
+      "tasks": [
+        {
+          "task": "Convert projects to SDK-style csproj format",
+          "effort": "low",
+          "risk": "low"
+        },
+        {
+          "task": "Upgrade to .NET 10",
+          "effort": "high",
+          "risk": "medium"
+        },
+        {
+          "task": "Migrate ASP.NET MVC to ASP.NET Core MVC",
+          "effort": "high",
+          "risk": "medium",
+          "notes": "Requires rewriting controllers, views, middleware, and configuration"
+        }
+      ]
+    },
+    {
+      "phase": 2,
+      "name": "Service Communication Modernization",
+      "priority": "high",
+      "tasks": [
+        {
+          "task": "Create gRPC service definitions from WCF contracts",
+          "effort": "medium",
+          "risk": "low"
+        },
+        {
+          "task": "Implement gRPC service",
+          "effort": "medium",
+          "risk": "low"
+        },
+        {
+          "task": "Update client to consume gRPC service",
+          "effort": "medium",
+          "risk": "low"
+        }
+      ]
+    },
+    {
+      "phase": 3,
+      "name": "Messaging Modernization",
+      "priority": "high",
+      "tasks": [
+        {
+          "task": "Replace MSMQ with Azure Service Bus",
+          "effort": "medium",
+          "risk": "medium",
+          "notes": "Consider using Dapr pub/sub for abstraction"
+        },
+        {
+          "task": "Reimplement OrderQueueService with Azure Service Bus SDK",
+          "effort": "medium",
+          "risk": "low"
+        },
+        {
+          "task": "Update order submission and processing logic",
+          "effort": "low",
+          "risk": "low"
+        }
+      ]
+    },
+    {
+      "phase": 4,
+      "name": "State Management Modernization",
+      "priority": "medium",
+      "tasks": [
+        {
+          "task": "Configure distributed session state with Redis",
+          "effort": "low",
+          "risk": "low"
+        },
+        {
+          "task": "Update session usage to be compatible with distributed cache",
+          "effort": "low",
+          "risk": "low"
+        }
+      ]
+    },
+    {
+      "phase": 5,
+      "name": "Containerization",
+      "priority": "high",
+      "tasks": [
+        {
+          "task": "Create Dockerfile for web application",
+          "effort": "low",
+          "risk": "low"
+        },
+        {
+          "task": "Create Dockerfile for service (if separated)",
+          "effort": "low",
+          "risk": "low"
+        },
+        {
+          "task": "Add Azure Container Apps deployment manifests",
+          "effort": "medium",
+          "risk": "medium"
+        },
+        {
+          "task": "Configure Dapr components for Service Bus",
+          "effort": "medium",
+          "risk": "low"
+        }
+      ]
+    }
+  ],
+  "risk_assessment": {
+    "overall_risk": "medium",
+    "risks": [
+      {
+        "risk": "ASP.NET MVC to ASP.NET Core migration complexity",
+        "severity": "medium",
+        "mitigation": "Follow Microsoft migration guides, use incremental approach"
+      },
+      {
+        "risk": "WCF to gRPC breaking changes in API contracts",
+        "severity": "low",
+        "mitigation": "Maintain backward compatibility during transition if needed"
+      },
+      {
+        "risk": "MSMQ to Azure Service Bus semantic differences",
+        "severity": "medium",
+        "mitigation": "Carefully map MSMQ patterns to Service Bus patterns, test thoroughly"
+      },
+      {
+        "risk": "Session state loss during transition",
+        "severity": "low",
+        "mitigation": "Plan for session migration or accept session reset"
+      }
+    ]
+  },
+  "estimated_effort": {
+    "total_story_points": 34,
+    "breakdown": {
+      "phase_1": 13,
+      "phase_2": 8,
+      "phase_3": 8,
+      "phase_4": 3,
+      "phase_5": 2
+    },
+    "estimated_duration": "4-6 weeks with 1-2 developers"
+  },
+  "benefits": {
+    "technical": [
+      "Cross-platform deployment capability",
+      "Modern, supported framework (.NET 10)",
+      "Better performance with gRPC",
+      "Cloud-native messaging with Azure Service Bus",
+      "Container-based deployment for better scaling",
+      "Reduced infrastructure costs (Linux containers vs Windows)"
+    ],
+    "business": [
+      "Reduced hosting costs",
+      "Improved scalability and reliability",
+      "Future-proof technology stack",
+      "Easier DevOps and CI/CD",
+      "Better developer experience"
+    ]
+  }
+}

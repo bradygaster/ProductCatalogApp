@@ -1,0 +1,99 @@
+# Modernization Playbook
+# User Request: upgrade this app to .net 10 and ready it for deployment to azure container apps. migrate all the msmq functionality to azure service bus
+
+migration_preferences:
+  target_framework: net10.0
+  target_compute: azure-container-apps
+  
+  # Framework migrations
+  framework_migrations:
+    - source: dotnet-framework-4.8.1
+      target: net10.0
+      reason: "Modernize to latest .NET version for container deployment"
+    
+    - source: aspnet-mvc
+      target: aspnetcore-mvc
+      reason: "ASP.NET Core is required for containerization and cross-platform support"
+  
+  # Service migrations
+  service_migrations:
+    - source: wcf
+      target: grpc
+      reason: "gRPC is the modern replacement for WCF with better performance and cross-platform support"
+  
+  # Messaging migrations
+  messaging_migrations:
+    - source: msmq
+      target: azure-service-bus
+      reason: "Azure Service Bus replaces MSMQ for cloud-native messaging in Azure Container Apps"
+  
+  # Project format
+  project_format:
+    source: classic-csproj
+    target: sdk-style-csproj
+    reason: "SDK-style projects are required for .NET Core/5+ and provide better maintainability"
+
+# Azure Container Apps configuration
+azure_container_apps:
+  compute_type: azure-container-apps
+  container_registry: required
+  features:
+    - name: dapr
+      enabled: true
+      reason: "Dapr pub/sub can abstract Azure Service Bus integration"
+    - name: ingress
+      enabled: true
+      reason: "HTTP ingress for web application"
+    - name: secrets
+      enabled: true
+      reason: "Store connection strings and sensitive configuration"
+
+# Migration strategy
+migration_strategy:
+  approach: incremental
+  phases:
+    - phase: 1
+      name: "Project Structure Modernization"
+      tasks:
+        - "Convert to SDK-style csproj"
+        - "Upgrade to .NET 10"
+        - "Convert ASP.NET MVC to ASP.NET Core MVC"
+    
+    - phase: 2
+      name: "Service Communication Modernization"
+      tasks:
+        - "Migrate WCF service to gRPC"
+        - "Update client to use gRPC"
+    
+    - phase: 3
+      name: "Messaging Modernization"
+      tasks:
+        - "Replace MSMQ with Azure Service Bus"
+        - "Implement Dapr pub/sub abstraction"
+        - "Update OrderQueueService"
+    
+    - phase: 4
+      name: "Containerization"
+      tasks:
+        - "Create Dockerfiles"
+        - "Add container orchestration files"
+        - "Configure for Azure Container Apps deployment"
+
+# Dependencies to update
+dependencies:
+  remove:
+    - System.Messaging
+    - System.ServiceModel
+    - Microsoft.AspNet.Mvc
+    - Microsoft.AspNet.Razor
+  
+  add:
+    - Azure.Messaging.ServiceBus
+    - Grpc.AspNetCore
+    - Microsoft.AspNetCore.Mvc
+
+# State management
+state_management:
+  current: session-based
+  target: distributed-cache
+  recommendation: "Use Redis or Azure Cache for Redis for distributed session state in container environment"
