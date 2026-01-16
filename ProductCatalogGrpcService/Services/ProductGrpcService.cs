@@ -10,10 +10,10 @@ public class ProductGrpcService : ProductService.ProductServiceBase
     private readonly ProductRepository _repository;
     private readonly ILogger<ProductGrpcService> _logger;
 
-    public ProductGrpcService(ILogger<ProductGrpcService> logger)
+    public ProductGrpcService(ProductRepository repository, ILogger<ProductGrpcService> logger)
     {
         _logger = logger;
-        _repository = new ProductRepository();
+        _repository = repository;
     }
 
     public override Task<ProductListResponse> GetAllProducts(EmptyRequest request, ServerCallContext context)
