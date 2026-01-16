@@ -11,7 +11,10 @@ namespace ProductCatalog.Services
 
         public OrderQueueService()
         {
-            _queuePath = ConfigurationManager.AppSettings["OrderQueuePath"] ?? @".\Private$\ProductCatalogOrders";
+            // Try to get configuration from appsettings.json first, fall back to web.config
+            _queuePath = AppConfiguration.GetAppSetting("OrderQueuePath") 
+                         ?? ConfigurationManager.AppSettings["OrderQueuePath"] 
+                         ?? @".\Private$\ProductCatalogOrders";
             EnsureQueueExists();
         }
 
