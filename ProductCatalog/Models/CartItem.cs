@@ -1,5 +1,5 @@
 using System;
-using ProductCatalog.ProductServiceReference;
+using ProductServiceLibrary;
 
 namespace ProductCatalog.Models
 {
