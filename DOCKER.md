@@ -8,6 +8,22 @@ This document describes how to run the ProductCatalog application using Docker c
 - At least 8GB of RAM allocated to Docker
 - Windows 10/11 or Windows Server 2019/2022
 
+## Configuration
+
+Before starting, set up your environment variables:
+
+1. Copy `.env.example` to `.env`:
+   ```powershell
+   Copy-Item .env.example .env
+   ```
+
+2. Edit `.env` and update the SQL Server password (optional for development):
+   ```
+   SQL_SA_PASSWORD=YourStrong@Passw0rd
+   ```
+
+**Important:** Never commit the `.env` file to version control. It's already included in `.gitignore`.
+
 ## Quick Start
 
 ### Build and Run with Docker Compose
@@ -66,12 +82,19 @@ Configure the application using environment variables in `docker-compose.overrid
 
 ### Database Connection
 
-The default SQL Server configuration:
+The SQL Server configuration uses environment variables:
 - **Server**: sqlserver (container name)
 - **Port**: 1433
 - **Database**: ProductCatalog
 - **User**: sa
-- **Password**: YourStrong@Passw0rd (change in production!)
+- **Password**: Set via `SQL_SA_PASSWORD` environment variable (defaults to `YourStrong@Passw0rd`)
+
+To use a custom password:
+1. Create a `.env` file from `.env.example`
+2. Set `SQL_SA_PASSWORD=YourCustomPassword`
+3. Run `docker-compose up`
+
+**Security Note:** Always use strong passwords and never commit the `.env` file to version control.
 
 ## Architecture
 

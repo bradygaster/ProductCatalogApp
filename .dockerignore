@@ -54,3 +54,7 @@ docs/
 Dockerfile*
 docker-compose*
 .dockerignore
+
+# Environment files with secrets
+.env
+.env.local

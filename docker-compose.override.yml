@@ -12,7 +12,7 @@ services:
   productcatalog-web:
     environment:
       # Local development environment variables
-      - ConnectionStrings__DefaultConnection=Server=sqlserver,1433;Database=ProductCatalog;User Id=sa;Password=YourStrong@Passw0rd;TrustServerCertificate=True
+      - ConnectionStrings__DefaultConnection=Server=sqlserver,1433;Database=ProductCatalog;User Id=sa;Password=$${SQL_SA_PASSWORD:-YourStrong@Passw0rd};TrustServerCertificate=True
       - OrderQueuePath=.\\Private$\\ProductCatalogOrders
     ports:
       # Map to different local ports if needed
