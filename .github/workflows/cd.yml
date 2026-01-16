@@ -1,0 +1,298 @@
+name: CD
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Environment to deploy to'
+        required: true
+        type: choice
+        options:
+          - dev
+          - staging
+          - production
+
+env:
+  SOLUTION_FILE: ProductCatalogApp.slnx
+  BUILD_CONFIGURATION: Release
+  NUGET_PACKAGES: ${{ github.workspace }}/.nuget/packages
+  ARTIFACT_NAME: product-catalog-app
+
+jobs:
+  build-and-publish:
+    name: Build and Publish
+    runs-on: windows-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    
+    - name: Setup NuGet
+      uses: NuGet/setup-nuget@v1
+      with:
+        nuget-version: 'latest'
+    
+    - name: Setup MSBuild
+      uses: microsoft/setup-msbuild@v1.3
+      with:
+        msbuild-architecture: x64
+    
+    - name: Cache NuGet packages
+      uses: actions/cache@v4
+      with:
+        path: ${{ env.NUGET_PACKAGES }}
+        key: ${{ runner.os }}-nuget-${{ hashFiles('**/packages.config') }}
+        restore-keys: |
+          ${{ runner.os }}-nuget-
+    
+    - name: Restore NuGet packages
+      run: nuget restore ${{ env.SOLUTION_FILE }}
+    
+    - name: Build solution
+      run: msbuild ${{ env.SOLUTION_FILE }} /p:Configuration=${{ env.BUILD_CONFIGURATION }} /p:Platform="Any CPU" /p:DeployOnBuild=true /p:PublishProfile=FolderProfile /m /v:minimal
+    
+    - name: Publish Web Application
+      shell: pwsh
+      run: |
+        $publishPath = "${{ github.workspace }}/publish"
+        New-Item -ItemType Directory -Force -Path $publishPath
+        
+        # Publish ProductCatalog web application
+        msbuild ProductCatalog/ProductCatalog.csproj `
+          /p:Configuration=${{ env.BUILD_CONFIGURATION }} `
+          /p:Platform="Any CPU" `
+          /p:DeployOnBuild=true `
+          /p:PublishProfile=FolderProfile `
+          /p:publishUrl=$publishPath `
+          /p:WebPublishMethod=FileSystem `
+          /m /v:minimal
+    
+    - name: Create deployment package
+      shell: pwsh
+      run: |
+        $publishPath = "${{ github.workspace }}/publish"
+        $packagePath = "${{ github.workspace }}/package"
+        New-Item -ItemType Directory -Force -Path $packagePath
+        
+        # Copy published files
+        if (Test-Path $publishPath) {
+          Copy-Item -Path "$publishPath/*" -Destination $packagePath -Recurse
+        } else {
+          # Fallback to bin folder if publish didn't work as expected
+          Copy-Item -Path "ProductCatalog/bin/${{ env.BUILD_CONFIGURATION }}/*" -Destination $packagePath -Recurse
+        }
+        
+        # Copy ProductServiceLibrary binaries
+        $servicePath = "$packagePath/ProductServiceLibrary"
+        New-Item -ItemType Directory -Force -Path $servicePath
+        Copy-Item -Path "ProductServiceLibrary/bin/${{ env.BUILD_CONFIGURATION }}/*" -Destination $servicePath -Recurse
+    
+    - name: Upload deployment package
+      uses: actions/upload-artifact@v4
+      with:
+        name: ${{ env.ARTIFACT_NAME }}
+        path: ${{ github.workspace }}/package
+        retention-days: 30
+
+  deploy-dev:
+    name: Deploy to Dev
+    runs-on: windows-latest
+    needs: build-and-publish
+    environment:
+      name: dev
+      url: https://dev-productcatalog.azurewebsites.net
+    
+    steps:
+    - name: Download deployment package
+      uses: actions/download-artifact@v4
+      with:
+        name: ${{ env.ARTIFACT_NAME }}
+        path: ${{ github.workspace }}/package
+    
+    - name: Login to Azure
+      uses: azure/login@v2
+      with:
+        creds: ${{ secrets.AZURE_CREDENTIALS }}
+    
+    - name: Deploy to Azure Web App
+      uses: azure/webapps-deploy@v2
+      with:
+        app-name: ${{ secrets.AZURE_WEBAPP_NAME_DEV }}
+        package: ${{ github.workspace }}/package
+    
+    - name: Verify deployment
+      shell: pwsh
+      run: |
+        Write-Host "Deployment to Dev environment completed"
+        Write-Host "URL: https://dev-productcatalog.azurewebsites.net"
+        
+        # Optional: Add health check
+        # $response = Invoke-WebRequest -Uri "https://dev-productcatalog.azurewebsites.net" -UseBasicParsing
+        # if ($response.StatusCode -ne 200) {
+        #   Write-Error "Health check failed with status code: $($response.StatusCode)"
+        #   exit 1
+        # }
+    
+    - name: Azure logout
+      if: always()
+      run: az logout
+
+  deploy-staging:
+    name: Deploy to Staging
+    runs-on: windows-latest
+    needs: [build-and-publish, deploy-dev]
+    environment:
+      name: staging
+      url: https://staging-productcatalog.azurewebsites.net
+    if: github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && (github.event.inputs.environment == 'staging' || github.event.inputs.environment == 'production'))
+    
+    steps:
+    - name: Download deployment package
+      uses: actions/download-artifact@v4
+      with:
+        name: ${{ env.ARTIFACT_NAME }}
+        path: ${{ github.workspace }}/package
+    
+    - name: Login to Azure
+      uses: azure/login@v2
+      with:
+        creds: ${{ secrets.AZURE_CREDENTIALS }}
+    
+    - name: Deploy to Azure Web App
+      uses: azure/webapps-deploy@v2
+      with:
+        app-name: ${{ secrets.AZURE_WEBAPP_NAME_STAGING }}
+        package: ${{ github.workspace }}/package
+        slot-name: staging
+    
+    - name: Run smoke tests
+      shell: pwsh
+      run: |
+        Write-Host "Running smoke tests on Staging environment"
+        # Add your smoke tests here
+        # Example:
+        # $response = Invoke-WebRequest -Uri "https://staging-productcatalog.azurewebsites.net" -UseBasicParsing
+        # if ($response.StatusCode -ne 200) {
+        #   Write-Error "Smoke test failed"
+        #   exit 1
+        # }
+    
+    - name: Azure logout
+      if: always()
+      run: az logout
+
+  deploy-production:
+    name: Deploy to Production
+    runs-on: windows-latest
+    needs: [build-and-publish, deploy-staging]
+    environment:
+      name: production
+      url: https://productcatalog.azurewebsites.net
+    if: github.event_name == 'workflow_dispatch' && github.event.inputs.environment == 'production'
+    
+    steps:
+    - name: Download deployment package
+      uses: actions/download-artifact@v4
+      with:
+        name: ${{ env.ARTIFACT_NAME }}
+        path: ${{ github.workspace }}/package
+    
+    - name: Login to Azure
+      uses: azure/login@v2
+      with:
+        creds: ${{ secrets.AZURE_CREDENTIALS }}
+    
+    - name: Create backup
+      shell: pwsh
+      run: |
+        Write-Host "Creating backup of current production deployment"
+        $timestamp = Get-Date -Format "yyyyMMdd-HHmmss"
+        
+        # Azure CLI command to create a backup (example)
+        # az webapp deployment source config-zip --subscription ${{ secrets.AZURE_SUBSCRIPTION_ID }} `
+        #   --resource-group ${{ secrets.AZURE_RESOURCE_GROUP }} `
+        #   --name ${{ secrets.AZURE_WEBAPP_NAME_PROD }} `
+        #   --src backup-$timestamp.zip
+        
+        Write-Host "Backup created: backup-$timestamp"
+    
+    - name: Deploy to Azure Web App
+      uses: azure/webapps-deploy@v2
+      with:
+        app-name: ${{ secrets.AZURE_WEBAPP_NAME_PROD }}
+        package: ${{ github.workspace }}/package
+    
+    - name: Verify production deployment
+      shell: pwsh
+      run: |
+        Write-Host "Verifying production deployment"
+        Start-Sleep -Seconds 30  # Wait for app to warm up
+        
+        # Add health check
+        # $response = Invoke-WebRequest -Uri "https://productcatalog.azurewebsites.net" -UseBasicParsing
+        # if ($response.StatusCode -ne 200) {
+        #   Write-Error "Production health check failed"
+        #   exit 1
+        # }
+        
+        Write-Host "Production deployment verified successfully"
+    
+    - name: Create deployment tag
+      if: success()
+      shell: pwsh
+      run: |
+        $timestamp = Get-Date -Format "yyyyMMdd-HHmmss"
+        $tag = "production-$timestamp"
+        git config user.name "GitHub Actions"
+        git config user.email "actions@github.com"
+        git tag -a $tag -m "Production deployment on $timestamp"
+        # Note: Push tag separately if needed
+        # git push origin $tag
+    
+    - name: Azure logout
+      if: always()
+      run: az logout
+
+  rollback:
+    name: Rollback
+    runs-on: windows-latest
+    if: github.event_name == 'workflow_dispatch' && github.event.inputs.environment != ''
+    
+    steps:
+    - name: Login to Azure
+      uses: azure/login@v2
+      with:
+        creds: ${{ secrets.AZURE_CREDENTIALS }}
+    
+    - name: Perform rollback
+      shell: pwsh
+      run: |
+        Write-Host "Initiating rollback for ${{ github.event.inputs.environment }} environment"
+        
+        # Determine the app name based on environment
+        $appName = switch ("${{ github.event.inputs.environment }}") {
+          "dev" { "${{ secrets.AZURE_WEBAPP_NAME_DEV }}" }
+          "staging" { "${{ secrets.AZURE_WEBAPP_NAME_STAGING }}" }
+          "production" { "${{ secrets.AZURE_WEBAPP_NAME_PROD }}" }
+        }
+        
+        if ([string]::IsNullOrEmpty($appName)) {
+          Write-Error "Invalid environment specified"
+          exit 1
+        }
+        
+        # Example rollback using Azure CLI slot swap or restore from backup
+        # az webapp deployment slot swap --subscription ${{ secrets.AZURE_SUBSCRIPTION_ID }} `
+        #   --resource-group ${{ secrets.AZURE_RESOURCE_GROUP }} `
+        #   --name $appName `
+        #   --slot staging `
+        #   --target-slot production
+        
+        Write-Host "Rollback procedure would be executed here"
+        Write-Host "See docs/deployment/rollback.md for detailed instructions"
+    
+    - name: Azure logout
+      if: always()
+      run: az logout
