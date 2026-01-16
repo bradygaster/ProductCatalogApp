@@ -5,7 +5,7 @@ WORKDIR /src
 # Copy csproj files first for layer caching
 COPY ProductCatalog/ProductCatalog.csproj ProductCatalog/
 COPY ProductServiceLibrary/ProductServiceLibrary.csproj ProductServiceLibrary/
-COPY ProductCatalog/packages.config ProductCatalog/
+COPY ProductCatalog/packages.config* ProductCatalog/
 
 # Restore NuGet packages
 RUN nuget restore ProductCatalog/ProductCatalog.csproj -PackagesDirectory packages

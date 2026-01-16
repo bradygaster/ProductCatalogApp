@@ -15,18 +15,19 @@ COPY ProductServiceLibrary/ ProductServiceLibrary/
 WORKDIR /src/ProductServiceLibrary
 RUN msbuild ProductServiceLibrary.csproj /p:Configuration=Release /p:OutputPath=/app/out
 
-# Runtime stage
+# Runtime stage (non-functional - for reference only)
+# Note: WCF services require a host application and cannot run standalone
 FROM mcr.microsoft.com/dotnet/framework/runtime:4.8.1 AS runtime
 WORKDIR /app
 
 # Copy built service library
 COPY --from=build /app/out .
 
-# Expose WCF service port (when self-hosted)
-EXPOSE 8733
-
-# IMPORTANT: This is a WCF service library that requires a host application to run.
-# This Dockerfile is provided for reference and build verification only.
-# The service is consumed by the ProductCatalog web application and does not
-# run independently. To use this service, it must be hosted in IIS, a Windows Service,
-# or a console application host.
+# IMPORTANT: This runtime stage is for demonstration purposes only.
+# WCF service libraries require a host application to run (IIS, Windows Service, or console host).
+# This Dockerfile can be used for:
+# 1. Build verification in CI/CD pipelines
+# 2. Creating a base layer for a custom host application
+# 3. Reference implementation for hosting strategies
+#
+# The ProductCatalog web application consumes this service library.

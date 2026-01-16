@@ -17,10 +17,12 @@ Before starting, set up your environment variables:
    Copy-Item .env.example .env
    ```
 
-2. Edit `.env` and update the SQL Server password (optional for development):
+2. **IMPORTANT:** Edit `.env` and set a strong password (required for anything other than quick local testing):
    ```
-   SQL_SA_PASSWORD=YourStrong@Passw0rd
+   SQL_SA_PASSWORD=YourVerySecurePassword123!
    ```
+
+**Security Warning:** The default password `YourStrong@Passw0rd` is well-known and should NEVER be used in any environment accessible from a network. Always change it before use.
 
 **Important:** Never commit the `.env` file to version control. It's already included in `.gitignore`.
 
