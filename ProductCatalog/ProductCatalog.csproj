@@ -68,7 +68,8 @@
     <Reference Include="System.Configuration" />
     <Reference Include="System.Web.Services" />
     <Reference Include="System.EnterpriseServices" />
-    <!-- Package-based references using PackageReference -->
+    <!-- Assembly references to NuGet packages - required for non-SDK-style .NET Framework projects -->
+    <!-- PackageReference doesn't automatically add assembly references in old-style csproj format -->
     <Reference Include="Microsoft.Web.Infrastructure">
       <HintPath>$(NuGetPackageRoot)microsoft.web.infrastructure\2.0.0\lib\net40\Microsoft.Web.Infrastructure.dll</HintPath>
       <Private>True</Private>
@@ -238,7 +239,7 @@
     <Content Include="Content\bootstrap-grid.rtl.css.map" />
     <Content Include="Content\bootstrap-grid.min.css.map" />
     <Content Include="Content\bootstrap-grid.css.map" />
-    <None Include="packages.config" />
+    <!-- Removed packages.config as all packages are now managed via PackageReference -->
     <Content Include="Scripts\bootstrap.min.js.map" />
     <Content Include="Scripts\bootstrap.js.map" />
     <Content Include="Scripts\bootstrap.esm.min.js.map" />
