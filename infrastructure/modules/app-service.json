@@ -1,0 +1,166 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "metadata": {
+    "_generator": {
+      "name": "bicep",
+      "version": "0.39.26.7824",
+      "templateHash": "3344278282068086410"
+    }
+  },
+  "parameters": {
+    "appServiceName": {
+      "type": "string",
+      "metadata": {
+        "description": "Name of the App Service"
+      }
+    },
+    "location": {
+      "type": "string",
+      "defaultValue": "[resourceGroup().location]",
+      "metadata": {
+        "description": "Location for the App Service"
+      }
+    },
+    "appServicePlanId": {
+      "type": "string",
+      "metadata": {
+        "description": "App Service Plan ID"
+      }
+    },
+    "appInsightsConnectionString": {
+      "type": "string",
+      "defaultValue": "",
+      "metadata": {
+        "description": "Application Insights Connection String"
+      }
+    },
+    "appInsightsInstrumentationKey": {
+      "type": "string",
+      "defaultValue": "",
+      "metadata": {
+        "description": "Application Insights Instrumentation Key"
+      }
+    },
+    "storageConnectionString": {
+      "type": "string",
+      "defaultValue": "",
+      "metadata": {
+        "description": "Storage Account Connection String for queue operations"
+      }
+    },
+    "keyVaultUri": {
+      "type": "string",
+      "defaultValue": "",
+      "metadata": {
+        "description": "Key Vault URI for secrets"
+      }
+    },
+    "tags": {
+      "type": "object",
+      "defaultValue": {},
+      "metadata": {
+        "description": "Tags to apply to the resource"
+      }
+    },
+    "enableManagedIdentity": {
+      "type": "bool",
+      "defaultValue": true,
+      "metadata": {
+        "description": "Enable managed identity"
+      }
+    },
+    "netFrameworkVersion": {
+      "type": "string",
+      "defaultValue": "v4.8",
+      "metadata": {
+        "description": ".NET Framework version"
+      }
+    },
+    "alwaysOn": {
+      "type": "bool",
+      "defaultValue": true,
+      "metadata": {
+        "description": "Always On setting"
+      }
+    }
+  },
+  "resources": [
+    {
+      "type": "Microsoft.Web/sites",
+      "apiVersion": "2022-03-01",
+      "name": "[parameters('appServiceName')]",
+      "location": "[parameters('location')]",
+      "tags": "[parameters('tags')]",
+      "kind": "app",
+      "identity": "[if(parameters('enableManagedIdentity'), createObject('type', 'SystemAssigned'), null())]",
+      "properties": {
+        "serverFarmId": "[parameters('appServicePlanId')]",
+        "httpsOnly": true,
+        "siteConfig": {
+          "netFrameworkVersion": "[parameters('netFrameworkVersion')]",
+          "alwaysOn": "[parameters('alwaysOn')]",
+          "minTlsVersion": "1.2",
+          "ftpsState": "FtpsOnly",
+          "appSettings": [
+            {
+              "name": "APPINSIGHTS_INSTRUMENTATIONKEY",
+              "value": "[parameters('appInsightsInstrumentationKey')]"
+            },
+            {
+              "name": "APPLICATIONINSIGHTS_CONNECTION_STRING",
+              "value": "[parameters('appInsightsConnectionString')]"
+            },
+            {
+              "name": "ApplicationInsightsAgent_EXTENSION_VERSION",
+              "value": "~3"
+            },
+            {
+              "name": "XDT_MicrosoftApplicationInsights_Mode",
+              "value": "recommended"
+            },
+            {
+              "name": "StorageConnectionString",
+              "value": "[parameters('storageConnectionString')]"
+            },
+            {
+              "name": "KeyVaultUri",
+              "value": "[parameters('keyVaultUri')]"
+            }
+          ],
+          "connectionStrings": []
+        }
+      }
+    }
+  ],
+  "outputs": {
+    "defaultHostName": {
+      "type": "string",
+      "metadata": {
+        "description": "App Service default hostname"
+      },
+      "value": "[reference(resourceId('Microsoft.Web/sites', parameters('appServiceName')), '2022-03-01').defaultHostName]"
+    },
+    "appServiceName": {
+      "type": "string",
+      "metadata": {
+        "description": "App Service name"
+      },
+      "value": "[parameters('appServiceName')]"
+    },
+    "principalId": {
+      "type": "string",
+      "metadata": {
+        "description": "App Service principal ID (managed identity)"
+      },
+      "value": "[if(parameters('enableManagedIdentity'), reference(resourceId('Microsoft.Web/sites', parameters('appServiceName')), '2022-03-01', 'full').identity.principalId, '')]"
+    },
+    "appServiceId": {
+      "type": "string",
+      "metadata": {
+        "description": "App Service resource ID"
+      },
+      "value": "[resourceId('Microsoft.Web/sites', parameters('appServiceName'))]"
+    }
+  }
+}

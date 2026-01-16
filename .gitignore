@@ -361,3 +361,6 @@ MigrationBackup/
 
 # Fody - auto-generated XML schema
 FodyWeavers.xsd
+
+# Bicep generated ARM templates (optional - uncomment to exclude from source control)
+# infrastructure/**/*.json

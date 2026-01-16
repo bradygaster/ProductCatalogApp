@@ -1,0 +1,138 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+  "languageVersion": "2.0",
+  "contentVersion": "1.0.0.0",
+  "metadata": {
+    "_generator": {
+      "name": "bicep",
+      "version": "0.39.26.7824",
+      "templateHash": "6909620188940029023"
+    }
+  },
+  "parameters": {
+    "storageAccountName": {
+      "type": "string",
+      "metadata": {
+        "description": "Name of the Storage Account"
+      }
+    },
+    "location": {
+      "type": "string",
+      "defaultValue": "[resourceGroup().location]",
+      "metadata": {
+        "description": "Location for the Storage Account"
+      }
+    },
+    "sku": {
+      "type": "string",
+      "defaultValue": "Standard_LRS",
+      "allowedValues": [
+        "Standard_LRS",
+        "Standard_GRS",
+        "Standard_RAGRS",
+        "Standard_ZRS",
+        "Premium_LRS",
+        "Premium_ZRS"
+      ],
+      "metadata": {
+        "description": "Storage Account SKU"
+      }
+    },
+    "tags": {
+      "type": "object",
+      "defaultValue": {},
+      "metadata": {
+        "description": "Tags to apply to the resource"
+      }
+    },
+    "enableQueueService": {
+      "type": "bool",
+      "defaultValue": true,
+      "metadata": {
+        "description": "Enable queue service"
+      }
+    },
+    "defaultQueueName": {
+      "type": "string",
+      "defaultValue": "orders",
+      "metadata": {
+        "description": "Default queue name for orders"
+      }
+    }
+  },
+  "resources": {
+    "storageAccount": {
+      "type": "Microsoft.Storage/storageAccounts",
+      "apiVersion": "2022-09-01",
+      "name": "[parameters('storageAccountName')]",
+      "location": "[parameters('location')]",
+      "tags": "[parameters('tags')]",
+      "sku": {
+        "name": "[parameters('sku')]"
+      },
+      "kind": "StorageV2",
+      "properties": {
+        "accessTier": "Hot",
+        "supportsHttpsTrafficOnly": true,
+        "minimumTlsVersion": "TLS1_2",
+        "allowBlobPublicAccess": false,
+        "networkAcls": {
+          "defaultAction": "Allow",
+          "bypass": "AzureServices"
+        }
+      }
+    },
+    "queueService": {
+      "condition": "[parameters('enableQueueService')]",
+      "type": "Microsoft.Storage/storageAccounts/queueServices",
+      "apiVersion": "2022-09-01",
+      "name": "[format('{0}/{1}', parameters('storageAccountName'), 'default')]",
+      "properties": {},
+      "dependsOn": [
+        "storageAccount"
+      ]
+    },
+    "orderQueue": {
+      "condition": "[parameters('enableQueueService')]",
+      "type": "Microsoft.Storage/storageAccounts/queueServices/queues",
+      "apiVersion": "2022-09-01",
+      "name": "[format('{0}/{1}/{2}', parameters('storageAccountName'), 'default', parameters('defaultQueueName'))]",
+      "properties": {
+        "metadata": {}
+      },
+      "dependsOn": [
+        "queueService"
+      ]
+    }
+  },
+  "outputs": {
+    "storageAccountId": {
+      "type": "string",
+      "metadata": {
+        "description": "Storage Account ID"
+      },
+      "value": "[resourceId('Microsoft.Storage/storageAccounts', parameters('storageAccountName'))]"
+    },
+    "storageAccountName": {
+      "type": "string",
+      "metadata": {
+        "description": "Storage Account name"
+      },
+      "value": "[parameters('storageAccountName')]"
+    },
+    "connectionString": {
+      "type": "securestring",
+      "metadata": {
+        "description": "Storage Account primary connection string"
+      },
+      "value": "[format('DefaultEndpointsProtocol=https;AccountName={0};AccountKey={1};EndpointSuffix={2}', parameters('storageAccountName'), listKeys('storageAccount', '2022-09-01').keys[0].value, environment().suffixes.storage)]"
+    },
+    "primaryKey": {
+      "type": "securestring",
+      "metadata": {
+        "description": "Storage Account primary key"
+      },
+      "value": "[listKeys('storageAccount', '2022-09-01').keys[0].value]"
+    }
+  }
+}

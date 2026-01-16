@@ -1,0 +1,1167 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+  "languageVersion": "2.0",
+  "contentVersion": "1.0.0.0",
+  "metadata": {
+    "_generator": {
+      "name": "bicep",
+      "version": "0.39.26.7824",
+      "templateHash": "15434111648501120966"
+    }
+  },
+  "parameters": {
+    "environmentName": {
+      "type": "string",
+      "defaultValue": "dev",
+      "allowedValues": [
+        "dev",
+        "staging",
+        "prod"
+      ],
+      "metadata": {
+        "description": "The environment name (dev, staging, prod)"
+      }
+    },
+    "location": {
+      "type": "string",
+      "defaultValue": "[resourceGroup().location]",
+      "metadata": {
+        "description": "The Azure region for all resources"
+      }
+    },
+    "resourceBaseName": {
+      "type": "string",
+      "defaultValue": "productcatalog",
+      "metadata": {
+        "description": "Base name for all resources"
+      }
+    },
+    "appServicePlanSku": {
+      "type": "string",
+      "defaultValue": "B1",
+      "allowedValues": [
+        "F1",
+        "D1",
+        "B1",
+        "B2",
+        "B3",
+        "S1",
+        "S2",
+        "S3",
+        "P1v2",
+        "P2v2",
+        "P3v2",
+        "P1v3",
+        "P2v3",
+        "P3v3"
+      ],
+      "metadata": {
+        "description": "App Service Plan SKU"
+      }
+    },
+    "storageAccountSku": {
+      "type": "string",
+      "defaultValue": "Standard_LRS",
+      "allowedValues": [
+        "Standard_LRS",
+        "Standard_GRS",
+        "Standard_RAGRS",
+        "Standard_ZRS",
+        "Premium_LRS",
+        "Premium_ZRS"
+      ],
+      "metadata": {
+        "description": "Storage Account SKU"
+      }
+    },
+    "keyVaultSku": {
+      "type": "string",
+      "defaultValue": "standard",
+      "allowedValues": [
+        "standard",
+        "premium"
+      ],
+      "metadata": {
+        "description": "Key Vault SKU"
+      }
+    },
+    "logAnalyticsRetentionInDays": {
+      "type": "int",
+      "defaultValue": 30,
+      "minValue": 30,
+      "maxValue": 730,
+      "metadata": {
+        "description": "Log Analytics retention in days"
+      }
+    },
+    "enableKeyVaultRbacAuthorization": {
+      "type": "bool",
+      "defaultValue": true,
+      "metadata": {
+        "description": "Enable Key Vault RBAC authorization"
+      }
+    },
+    "tags": {
+      "type": "object",
+      "defaultValue": {
+        "environment": "[parameters('environmentName')]",
+        "application": "ProductCatalog",
+        "managedBy": "bicep"
+      },
+      "metadata": {
+        "description": "Tags to apply to all resources"
+      }
+    }
+  },
+  "variables": {
+    "uniqueSuffix": "[uniqueString(resourceGroup().id, parameters('resourceBaseName'))]",
+    "appServicePlanName": "[format('{0}-plan-{1}', parameters('resourceBaseName'), parameters('environmentName'))]",
+    "appServiceName": "[format('{0}-app-{1}-{2}', parameters('resourceBaseName'), parameters('environmentName'), variables('uniqueSuffix'))]",
+    "storageAccountName": "[toLower(format('{0}st{1}{2}', parameters('resourceBaseName'), parameters('environmentName'), take(variables('uniqueSuffix'), 8)))]",
+    "keyVaultName": "[format('{0}-kv-{1}-{2}', parameters('resourceBaseName'), parameters('environmentName'), take(variables('uniqueSuffix'), 4))]",
+    "appInsightsName": "[format('{0}-ai-{1}', parameters('resourceBaseName'), parameters('environmentName'))]",
+    "logAnalyticsName": "[format('{0}-log-{1}', parameters('resourceBaseName'), parameters('environmentName'))]"
+  },
+  "resources": {
+    "keyVaultAccessPolicy": {
+      "condition": "[not(parameters('enableKeyVaultRbacAuthorization'))]",
+      "type": "Microsoft.KeyVault/vaults/accessPolicies",
+      "apiVersion": "2022-07-01",
+      "name": "[format('{0}/add', variables('keyVaultName'))]",
+      "properties": {
+        "accessPolicies": [
+          {
+            "tenantId": "[tenant().tenantId]",
+            "objectId": "[reference('appService').outputs.principalId.value]",
+            "permissions": {
+              "secrets": [
+                "get",
+                "list"
+              ]
+            }
+          }
+        ]
+      },
+      "dependsOn": [
+        "appService"
+      ]
+    },
+    "logAnalytics": {
+      "type": "Microsoft.Resources/deployments",
+      "apiVersion": "2025-04-01",
+      "name": "deploy-log-analytics",
+      "properties": {
+        "expressionEvaluationOptions": {
+          "scope": "inner"
+        },
+        "mode": "Incremental",
+        "parameters": {
+          "workspaceName": {
+            "value": "[variables('logAnalyticsName')]"
+          },
+          "location": {
+            "value": "[parameters('location')]"
+          },
+          "tags": {
+            "value": "[parameters('tags')]"
+          },
+          "retentionInDays": {
+            "value": "[parameters('logAnalyticsRetentionInDays')]"
+          },
+          "sku": {
+            "value": "PerGB2018"
+          }
+        },
+        "template": {
+          "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+          "contentVersion": "1.0.0.0",
+          "metadata": {
+            "_generator": {
+              "name": "bicep",
+              "version": "0.39.26.7824",
+              "templateHash": "13610568827403309198"
+            }
+          },
+          "parameters": {
+            "workspaceName": {
+              "type": "string",
+              "metadata": {
+                "description": "Name of the Log Analytics Workspace"
+              }
+            },
+            "location": {
+              "type": "string",
+              "defaultValue": "[resourceGroup().location]",
+              "metadata": {
+                "description": "Location for the Log Analytics Workspace"
+              }
+            },
+            "tags": {
+              "type": "object",
+              "defaultValue": {},
+              "metadata": {
+                "description": "Tags to apply to the resource"
+              }
+            },
+            "retentionInDays": {
+              "type": "int",
+              "defaultValue": 30,
+              "minValue": 30,
+              "maxValue": 730,
+              "metadata": {
+                "description": "Workspace data retention in days"
+              }
+            },
+            "sku": {
+              "type": "string",
+              "defaultValue": "PerGB2018",
+              "allowedValues": [
+                "PerGB2018",
+                "Free",
+                "Standalone",
+                "PerNode",
+                "Standard",
+                "Premium"
+              ],
+              "metadata": {
+                "description": "Workspace SKU"
+              }
+            }
+          },
+          "resources": [
+            {
+              "type": "Microsoft.OperationalInsights/workspaces",
+              "apiVersion": "2022-10-01",
+              "name": "[parameters('workspaceName')]",
+              "location": "[parameters('location')]",
+              "tags": "[parameters('tags')]",
+              "properties": {
+                "sku": {
+                  "name": "[parameters('sku')]"
+                },
+                "retentionInDays": "[parameters('retentionInDays')]",
+                "publicNetworkAccessForIngestion": "Enabled",
+                "publicNetworkAccessForQuery": "Enabled"
+              }
+            }
+          ],
+          "outputs": {
+            "workspaceId": {
+              "type": "string",
+              "metadata": {
+                "description": "Log Analytics Workspace ID"
+              },
+              "value": "[resourceId('Microsoft.OperationalInsights/workspaces', parameters('workspaceName'))]"
+            },
+            "workspaceName": {
+              "type": "string",
+              "metadata": {
+                "description": "Log Analytics Workspace name"
+              },
+              "value": "[parameters('workspaceName')]"
+            },
+            "customerId": {
+              "type": "string",
+              "metadata": {
+                "description": "Log Analytics Workspace Customer ID"
+              },
+              "value": "[reference(resourceId('Microsoft.OperationalInsights/workspaces', parameters('workspaceName')), '2022-10-01').customerId]"
+            }
+          }
+        }
+      }
+    },
+    "appInsights": {
+      "type": "Microsoft.Resources/deployments",
+      "apiVersion": "2025-04-01",
+      "name": "deploy-app-insights",
+      "properties": {
+        "expressionEvaluationOptions": {
+          "scope": "inner"
+        },
+        "mode": "Incremental",
+        "parameters": {
+          "appInsightsName": {
+            "value": "[variables('appInsightsName')]"
+          },
+          "location": {
+            "value": "[parameters('location')]"
+          },
+          "tags": {
+            "value": "[parameters('tags')]"
+          },
+          "workspaceId": {
+            "value": "[reference('logAnalytics').outputs.workspaceId.value]"
+          },
+          "applicationType": {
+            "value": "web"
+          }
+        },
+        "template": {
+          "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+          "contentVersion": "1.0.0.0",
+          "metadata": {
+            "_generator": {
+              "name": "bicep",
+              "version": "0.39.26.7824",
+              "templateHash": "4614452633474550066"
+            }
+          },
+          "parameters": {
+            "appInsightsName": {
+              "type": "string",
+              "metadata": {
+                "description": "Name of the Application Insights instance"
+              }
+            },
+            "location": {
+              "type": "string",
+              "defaultValue": "[resourceGroup().location]",
+              "metadata": {
+                "description": "Location for Application Insights"
+              }
+            },
+            "tags": {
+              "type": "object",
+              "defaultValue": {},
+              "metadata": {
+                "description": "Tags to apply to the resource"
+              }
+            },
+            "workspaceId": {
+              "type": "string",
+              "metadata": {
+                "description": "Log Analytics Workspace ID"
+              }
+            },
+            "applicationType": {
+              "type": "string",
+              "defaultValue": "web",
+              "allowedValues": [
+                "web",
+                "other"
+              ],
+              "metadata": {
+                "description": "Application type"
+              }
+            }
+          },
+          "resources": [
+            {
+              "type": "Microsoft.Insights/components",
+              "apiVersion": "2020-02-02",
+              "name": "[parameters('appInsightsName')]",
+              "location": "[parameters('location')]",
+              "tags": "[parameters('tags')]",
+              "kind": "[parameters('applicationType')]",
+              "properties": {
+                "Application_Type": "[parameters('applicationType')]",
+                "WorkspaceResourceId": "[parameters('workspaceId')]",
+                "publicNetworkAccessForIngestion": "Enabled",
+                "publicNetworkAccessForQuery": "Enabled"
+              }
+            }
+          ],
+          "outputs": {
+            "instrumentationKey": {
+              "type": "string",
+              "metadata": {
+                "description": "Application Insights Instrumentation Key"
+              },
+              "value": "[reference(resourceId('Microsoft.Insights/components', parameters('appInsightsName')), '2020-02-02').InstrumentationKey]"
+            },
+            "connectionString": {
+              "type": "string",
+              "metadata": {
+                "description": "Application Insights Connection String"
+              },
+              "value": "[reference(resourceId('Microsoft.Insights/components', parameters('appInsightsName')), '2020-02-02').ConnectionString]"
+            },
+            "appInsightsId": {
+              "type": "string",
+              "metadata": {
+                "description": "Application Insights ID"
+              },
+              "value": "[resourceId('Microsoft.Insights/components', parameters('appInsightsName'))]"
+            },
+            "appInsightsName": {
+              "type": "string",
+              "metadata": {
+                "description": "Application Insights name"
+              },
+              "value": "[parameters('appInsightsName')]"
+            }
+          }
+        }
+      },
+      "dependsOn": [
+        "logAnalytics"
+      ]
+    },
+    "storageAccount": {
+      "type": "Microsoft.Resources/deployments",
+      "apiVersion": "2025-04-01",
+      "name": "deploy-storage-account",
+      "properties": {
+        "expressionEvaluationOptions": {
+          "scope": "inner"
+        },
+        "mode": "Incremental",
+        "parameters": {
+          "storageAccountName": {
+            "value": "[variables('storageAccountName')]"
+          },
+          "location": {
+            "value": "[parameters('location')]"
+          },
+          "tags": {
+            "value": "[parameters('tags')]"
+          },
+          "sku": {
+            "value": "[parameters('storageAccountSku')]"
+          },
+          "enableQueueService": {
+            "value": true
+          },
+          "defaultQueueName": {
+            "value": "productcatalogorders"
+          }
+        },
+        "template": {
+          "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+          "languageVersion": "2.0",
+          "contentVersion": "1.0.0.0",
+          "metadata": {
+            "_generator": {
+              "name": "bicep",
+              "version": "0.39.26.7824",
+              "templateHash": "6909620188940029023"
+            }
+          },
+          "parameters": {
+            "storageAccountName": {
+              "type": "string",
+              "metadata": {
+                "description": "Name of the Storage Account"
+              }
+            },
+            "location": {
+              "type": "string",
+              "defaultValue": "[resourceGroup().location]",
+              "metadata": {
+                "description": "Location for the Storage Account"
+              }
+            },
+            "sku": {
+              "type": "string",
+              "defaultValue": "Standard_LRS",
+              "allowedValues": [
+                "Standard_LRS",
+                "Standard_GRS",
+                "Standard_RAGRS",
+                "Standard_ZRS",
+                "Premium_LRS",
+                "Premium_ZRS"
+              ],
+              "metadata": {
+                "description": "Storage Account SKU"
+              }
+            },
+            "tags": {
+              "type": "object",
+              "defaultValue": {},
+              "metadata": {
+                "description": "Tags to apply to the resource"
+              }
+            },
+            "enableQueueService": {
+              "type": "bool",
+              "defaultValue": true,
+              "metadata": {
+                "description": "Enable queue service"
+              }
+            },
+            "defaultQueueName": {
+              "type": "string",
+              "defaultValue": "orders",
+              "metadata": {
+                "description": "Default queue name for orders"
+              }
+            }
+          },
+          "resources": {
+            "storageAccount": {
+              "type": "Microsoft.Storage/storageAccounts",
+              "apiVersion": "2022-09-01",
+              "name": "[parameters('storageAccountName')]",
+              "location": "[parameters('location')]",
+              "tags": "[parameters('tags')]",
+              "sku": {
+                "name": "[parameters('sku')]"
+              },
+              "kind": "StorageV2",
+              "properties": {
+                "accessTier": "Hot",
+                "supportsHttpsTrafficOnly": true,
+                "minimumTlsVersion": "TLS1_2",
+                "allowBlobPublicAccess": false,
+                "networkAcls": {
+                  "defaultAction": "Allow",
+                  "bypass": "AzureServices"
+                }
+              }
+            },
+            "queueService": {
+              "condition": "[parameters('enableQueueService')]",
+              "type": "Microsoft.Storage/storageAccounts/queueServices",
+              "apiVersion": "2022-09-01",
+              "name": "[format('{0}/{1}', parameters('storageAccountName'), 'default')]",
+              "properties": {},
+              "dependsOn": [
+                "storageAccount"
+              ]
+            },
+            "orderQueue": {
+              "condition": "[parameters('enableQueueService')]",
+              "type": "Microsoft.Storage/storageAccounts/queueServices/queues",
+              "apiVersion": "2022-09-01",
+              "name": "[format('{0}/{1}/{2}', parameters('storageAccountName'), 'default', parameters('defaultQueueName'))]",
+              "properties": {
+                "metadata": {}
+              },
+              "dependsOn": [
+                "queueService"
+              ]
+            }
+          },
+          "outputs": {
+            "storageAccountId": {
+              "type": "string",
+              "metadata": {
+                "description": "Storage Account ID"
+              },
+              "value": "[resourceId('Microsoft.Storage/storageAccounts', parameters('storageAccountName'))]"
+            },
+            "storageAccountName": {
+              "type": "string",
+              "metadata": {
+                "description": "Storage Account name"
+              },
+              "value": "[parameters('storageAccountName')]"
+            },
+            "connectionString": {
+              "type": "securestring",
+              "metadata": {
+                "description": "Storage Account primary connection string"
+              },
+              "value": "[format('DefaultEndpointsProtocol=https;AccountName={0};AccountKey={1};EndpointSuffix={2}', parameters('storageAccountName'), listKeys('storageAccount', '2022-09-01').keys[0].value, environment().suffixes.storage)]"
+            },
+            "primaryKey": {
+              "type": "securestring",
+              "metadata": {
+                "description": "Storage Account primary key"
+              },
+              "value": "[listKeys('storageAccount', '2022-09-01').keys[0].value]"
+            }
+          }
+        }
+      }
+    },
+    "appServicePlan": {
+      "type": "Microsoft.Resources/deployments",
+      "apiVersion": "2025-04-01",
+      "name": "deploy-app-service-plan",
+      "properties": {
+        "expressionEvaluationOptions": {
+          "scope": "inner"
+        },
+        "mode": "Incremental",
+        "parameters": {
+          "appServicePlanName": {
+            "value": "[variables('appServicePlanName')]"
+          },
+          "location": {
+            "value": "[parameters('location')]"
+          },
+          "tags": {
+            "value": "[parameters('tags')]"
+          },
+          "sku": {
+            "value": "[parameters('appServicePlanSku')]"
+          },
+          "kind": {
+            "value": "Windows"
+          }
+        },
+        "template": {
+          "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+          "contentVersion": "1.0.0.0",
+          "metadata": {
+            "_generator": {
+              "name": "bicep",
+              "version": "0.39.26.7824",
+              "templateHash": "9516335871122444117"
+            }
+          },
+          "parameters": {
+            "appServicePlanName": {
+              "type": "string",
+              "metadata": {
+                "description": "Name of the App Service Plan"
+              }
+            },
+            "location": {
+              "type": "string",
+              "defaultValue": "[resourceGroup().location]",
+              "metadata": {
+                "description": "Location for the App Service Plan"
+              }
+            },
+            "sku": {
+              "type": "string",
+              "defaultValue": "B1",
+              "allowedValues": [
+                "F1",
+                "D1",
+                "B1",
+                "B2",
+                "B3",
+                "S1",
+                "S2",
+                "S3",
+                "P1v2",
+                "P2v2",
+                "P3v2",
+                "P1v3",
+                "P2v3",
+                "P3v3"
+              ],
+              "metadata": {
+                "description": "SKU for the App Service Plan"
+              }
+            },
+            "tags": {
+              "type": "object",
+              "defaultValue": {},
+              "metadata": {
+                "description": "Tags to apply to the resource"
+              }
+            },
+            "kind": {
+              "type": "string",
+              "defaultValue": "Windows",
+              "allowedValues": [
+                "Windows",
+                "Linux"
+              ],
+              "metadata": {
+                "description": "Kind of App Service Plan (Windows/Linux)"
+              }
+            }
+          },
+          "resources": [
+            {
+              "type": "Microsoft.Web/serverfarms",
+              "apiVersion": "2022-03-01",
+              "name": "[parameters('appServicePlanName')]",
+              "location": "[parameters('location')]",
+              "tags": "[parameters('tags')]",
+              "sku": {
+                "name": "[parameters('sku')]"
+              },
+              "kind": "[parameters('kind')]",
+              "properties": {
+                "reserved": "[equals(parameters('kind'), 'Linux')]"
+              }
+            }
+          ],
+          "outputs": {
+            "appServicePlanId": {
+              "type": "string",
+              "metadata": {
+                "description": "Resource ID of the App Service Plan"
+              },
+              "value": "[resourceId('Microsoft.Web/serverfarms', parameters('appServicePlanName'))]"
+            },
+            "appServicePlanName": {
+              "type": "string",
+              "metadata": {
+                "description": "Name of the App Service Plan"
+              },
+              "value": "[parameters('appServicePlanName')]"
+            }
+          }
+        }
+      }
+    },
+    "keyVault": {
+      "type": "Microsoft.Resources/deployments",
+      "apiVersion": "2025-04-01",
+      "name": "deploy-key-vault",
+      "properties": {
+        "expressionEvaluationOptions": {
+          "scope": "inner"
+        },
+        "mode": "Incremental",
+        "parameters": {
+          "keyVaultName": {
+            "value": "[variables('keyVaultName')]"
+          },
+          "location": {
+            "value": "[parameters('location')]"
+          },
+          "tags": {
+            "value": "[parameters('tags')]"
+          },
+          "sku": {
+            "value": "[parameters('keyVaultSku')]"
+          },
+          "enableSoftDelete": {
+            "value": true
+          },
+          "softDeleteRetentionInDays": {
+            "value": 90
+          },
+          "enableRbacAuthorization": {
+            "value": "[parameters('enableKeyVaultRbacAuthorization')]"
+          },
+          "publicNetworkAccess": {
+            "value": "Enabled"
+          },
+          "accessPolicies": {
+            "value": []
+          }
+        },
+        "template": {
+          "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+          "contentVersion": "1.0.0.0",
+          "metadata": {
+            "_generator": {
+              "name": "bicep",
+              "version": "0.39.26.7824",
+              "templateHash": "4542636486849702125"
+            }
+          },
+          "parameters": {
+            "keyVaultName": {
+              "type": "string",
+              "metadata": {
+                "description": "Name of the Key Vault"
+              }
+            },
+            "location": {
+              "type": "string",
+              "defaultValue": "[resourceGroup().location]",
+              "metadata": {
+                "description": "Location for the Key Vault"
+              }
+            },
+            "tags": {
+              "type": "object",
+              "defaultValue": {},
+              "metadata": {
+                "description": "Tags to apply to the resource"
+              }
+            },
+            "tenantId": {
+              "type": "string",
+              "defaultValue": "[tenant().tenantId]",
+              "metadata": {
+                "description": "Azure AD Tenant ID"
+              }
+            },
+            "sku": {
+              "type": "string",
+              "defaultValue": "standard",
+              "allowedValues": [
+                "standard",
+                "premium"
+              ],
+              "metadata": {
+                "description": "SKU for the Key Vault"
+              }
+            },
+            "enableSoftDelete": {
+              "type": "bool",
+              "defaultValue": true,
+              "metadata": {
+                "description": "Enable soft delete"
+              }
+            },
+            "softDeleteRetentionInDays": {
+              "type": "int",
+              "defaultValue": 90,
+              "minValue": 7,
+              "maxValue": 90,
+              "metadata": {
+                "description": "Soft delete retention in days"
+              }
+            },
+            "enableRbacAuthorization": {
+              "type": "bool",
+              "defaultValue": true,
+              "metadata": {
+                "description": "Enable RBAC authorization"
+              }
+            },
+            "publicNetworkAccess": {
+              "type": "string",
+              "defaultValue": "Enabled",
+              "metadata": {
+                "description": "Enable public network access"
+              }
+            },
+            "accessPolicies": {
+              "type": "array",
+              "defaultValue": [],
+              "metadata": {
+                "description": "Object IDs to grant access to Key Vault (for managed identities)"
+              }
+            }
+          },
+          "resources": [
+            {
+              "type": "Microsoft.KeyVault/vaults",
+              "apiVersion": "2022-07-01",
+              "name": "[parameters('keyVaultName')]",
+              "location": "[parameters('location')]",
+              "tags": "[parameters('tags')]",
+              "properties": {
+                "copy": [
+                  {
+                    "name": "accessPolicies",
+                    "count": "[length(parameters('accessPolicies'))]",
+                    "input": {
+                      "tenantId": "[parameters('tenantId')]",
+                      "objectId": "[parameters('accessPolicies')[copyIndex('accessPolicies')].objectId]",
+                      "permissions": "[parameters('accessPolicies')[copyIndex('accessPolicies')].permissions]"
+                    }
+                  }
+                ],
+                "tenantId": "[parameters('tenantId')]",
+                "sku": {
+                  "family": "A",
+                  "name": "[parameters('sku')]"
+                },
+                "enableSoftDelete": "[parameters('enableSoftDelete')]",
+                "softDeleteRetentionInDays": "[parameters('softDeleteRetentionInDays')]",
+                "enableRbacAuthorization": "[parameters('enableRbacAuthorization')]",
+                "publicNetworkAccess": "[parameters('publicNetworkAccess')]",
+                "networkAcls": {
+                  "defaultAction": "Allow",
+                  "bypass": "AzureServices"
+                }
+              }
+            }
+          ],
+          "outputs": {
+            "keyVaultId": {
+              "type": "string",
+              "metadata": {
+                "description": "Key Vault ID"
+              },
+              "value": "[resourceId('Microsoft.KeyVault/vaults', parameters('keyVaultName'))]"
+            },
+            "keyVaultName": {
+              "type": "string",
+              "metadata": {
+                "description": "Key Vault name"
+              },
+              "value": "[parameters('keyVaultName')]"
+            },
+            "keyVaultUri": {
+              "type": "string",
+              "metadata": {
+                "description": "Key Vault URI"
+              },
+              "value": "[reference(resourceId('Microsoft.KeyVault/vaults', parameters('keyVaultName')), '2022-07-01').vaultUri]"
+            }
+          }
+        }
+      }
+    },
+    "appService": {
+      "type": "Microsoft.Resources/deployments",
+      "apiVersion": "2025-04-01",
+      "name": "deploy-app-service",
+      "properties": {
+        "expressionEvaluationOptions": {
+          "scope": "inner"
+        },
+        "mode": "Incremental",
+        "parameters": {
+          "appServiceName": {
+            "value": "[variables('appServiceName')]"
+          },
+          "location": {
+            "value": "[parameters('location')]"
+          },
+          "tags": {
+            "value": "[parameters('tags')]"
+          },
+          "appServicePlanId": {
+            "value": "[reference('appServicePlan').outputs.appServicePlanId.value]"
+          },
+          "appInsightsConnectionString": {
+            "value": "[reference('appInsights').outputs.connectionString.value]"
+          },
+          "appInsightsInstrumentationKey": {
+            "value": "[reference('appInsights').outputs.instrumentationKey.value]"
+          },
+          "storageConnectionString": {
+            "value": "[listOutputsWithSecureValues('storageAccount', '2025-04-01').connectionString]"
+          },
+          "keyVaultUri": {
+            "value": "[reference('keyVault').outputs.keyVaultUri.value]"
+          },
+          "enableManagedIdentity": {
+            "value": true
+          },
+          "netFrameworkVersion": {
+            "value": "v4.8"
+          },
+          "alwaysOn": {
+            "value": "[and(not(equals(parameters('appServicePlanSku'), 'F1')), not(equals(parameters('appServicePlanSku'), 'D1')))]"
+          }
+        },
+        "template": {
+          "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+          "contentVersion": "1.0.0.0",
+          "metadata": {
+            "_generator": {
+              "name": "bicep",
+              "version": "0.39.26.7824",
+              "templateHash": "3344278282068086410"
+            }
+          },
+          "parameters": {
+            "appServiceName": {
+              "type": "string",
+              "metadata": {
+                "description": "Name of the App Service"
+              }
+            },
+            "location": {
+              "type": "string",
+              "defaultValue": "[resourceGroup().location]",
+              "metadata": {
+                "description": "Location for the App Service"
+              }
+            },
+            "appServicePlanId": {
+              "type": "string",
+              "metadata": {
+                "description": "App Service Plan ID"
+              }
+            },
+            "appInsightsConnectionString": {
+              "type": "string",
+              "defaultValue": "",
+              "metadata": {
+                "description": "Application Insights Connection String"
+              }
+            },
+            "appInsightsInstrumentationKey": {
+              "type": "string",
+              "defaultValue": "",
+              "metadata": {
+                "description": "Application Insights Instrumentation Key"
+              }
+            },
+            "storageConnectionString": {
+              "type": "string",
+              "defaultValue": "",
+              "metadata": {
+                "description": "Storage Account Connection String for queue operations"
+              }
+            },
+            "keyVaultUri": {
+              "type": "string",
+              "defaultValue": "",
+              "metadata": {
+                "description": "Key Vault URI for secrets"
+              }
+            },
+            "tags": {
+              "type": "object",
+              "defaultValue": {},
+              "metadata": {
+                "description": "Tags to apply to the resource"
+              }
+            },
+            "enableManagedIdentity": {
+              "type": "bool",
+              "defaultValue": true,
+              "metadata": {
+                "description": "Enable managed identity"
+              }
+            },
+            "netFrameworkVersion": {
+              "type": "string",
+              "defaultValue": "v4.8",
+              "metadata": {
+                "description": ".NET Framework version"
+              }
+            },
+            "alwaysOn": {
+              "type": "bool",
+              "defaultValue": true,
+              "metadata": {
+                "description": "Always On setting"
+              }
+            }
+          },
+          "resources": [
+            {
+              "type": "Microsoft.Web/sites",
+              "apiVersion": "2022-03-01",
+              "name": "[parameters('appServiceName')]",
+              "location": "[parameters('location')]",
+              "tags": "[parameters('tags')]",
+              "kind": "app",
+              "identity": "[if(parameters('enableManagedIdentity'), createObject('type', 'SystemAssigned'), null())]",
+              "properties": {
+                "serverFarmId": "[parameters('appServicePlanId')]",
+                "httpsOnly": true,
+                "siteConfig": {
+                  "netFrameworkVersion": "[parameters('netFrameworkVersion')]",
+                  "alwaysOn": "[parameters('alwaysOn')]",
+                  "minTlsVersion": "1.2",
+                  "ftpsState": "FtpsOnly",
+                  "appSettings": [
+                    {
+                      "name": "APPINSIGHTS_INSTRUMENTATIONKEY",
+                      "value": "[parameters('appInsightsInstrumentationKey')]"
+                    },
+                    {
+                      "name": "APPLICATIONINSIGHTS_CONNECTION_STRING",
+                      "value": "[parameters('appInsightsConnectionString')]"
+                    },
+                    {
+                      "name": "ApplicationInsightsAgent_EXTENSION_VERSION",
+                      "value": "~3"
+                    },
+                    {
+                      "name": "XDT_MicrosoftApplicationInsights_Mode",
+                      "value": "recommended"
+                    },
+                    {
+                      "name": "StorageConnectionString",
+                      "value": "[parameters('storageConnectionString')]"
+                    },
+                    {
+                      "name": "KeyVaultUri",
+                      "value": "[parameters('keyVaultUri')]"
+                    }
+                  ],
+                  "connectionStrings": []
+                }
+              }
+            }
+          ],
+          "outputs": {
+            "defaultHostName": {
+              "type": "string",
+              "metadata": {
+                "description": "App Service default hostname"
+              },
+              "value": "[reference(resourceId('Microsoft.Web/sites', parameters('appServiceName')), '2022-03-01').defaultHostName]"
+            },
+            "appServiceName": {
+              "type": "string",
+              "metadata": {
+                "description": "App Service name"
+              },
+              "value": "[parameters('appServiceName')]"
+            },
+            "principalId": {
+              "type": "string",
+              "metadata": {
+                "description": "App Service principal ID (managed identity)"
+              },
+              "value": "[if(parameters('enableManagedIdentity'), reference(resourceId('Microsoft.Web/sites', parameters('appServiceName')), '2022-03-01', 'full').identity.principalId, '')]"
+            },
+            "appServiceId": {
+              "type": "string",
+              "metadata": {
+                "description": "App Service resource ID"
+              },
+              "value": "[resourceId('Microsoft.Web/sites', parameters('appServiceName'))]"
+            }
+          }
+        }
+      },
+      "dependsOn": [
+        "appInsights",
+        "appServicePlan",
+        "keyVault",
+        "storageAccount"
+      ]
+    }
+  },
+  "outputs": {
+    "appServiceUrl": {
+      "type": "string",
+      "metadata": {
+        "description": "App Service default hostname"
+      },
+      "value": "[format('https://{0}', reference('appService').outputs.defaultHostName.value)]"
+    },
+    "appServiceName": {
+      "type": "string",
+      "metadata": {
+        "description": "App Service name"
+      },
+      "value": "[reference('appService').outputs.appServiceName.value]"
+    },
+    "appInsightsInstrumentationKey": {
+      "type": "string",
+      "metadata": {
+        "description": "Application Insights Instrumentation Key"
+      },
+      "value": "[reference('appInsights').outputs.instrumentationKey.value]"
+    },
+    "storageAccountName": {
+      "type": "string",
+      "metadata": {
+        "description": "Storage Account name"
+      },
+      "value": "[reference('storageAccount').outputs.storageAccountName.value]"
+    },
+    "keyVaultUri": {
+      "type": "string",
+      "metadata": {
+        "description": "Key Vault URI"
+      },
+      "value": "[reference('keyVault').outputs.keyVaultUri.value]"
+    },
+    "keyVaultName": {
+      "type": "string",
+      "metadata": {
+        "description": "Key Vault name"
+      },
+      "value": "[reference('keyVault').outputs.keyVaultName.value]"
+    },
+    "appServicePrincipalId": {
+      "type": "string",
+      "metadata": {
+        "description": "App Service Managed Identity Principal ID"
+      },
+      "value": "[reference('appService').outputs.principalId.value]"
+    },
+    "resourceGroupLocation": {
+      "type": "string",
+      "metadata": {
+        "description": "Resource Group location"
+      },
+      "value": "[parameters('location')]"
+    },
+    "environment": {
+      "type": "string",
+      "metadata": {
+        "description": "Environment name"
+      },
+      "value": "[parameters('environmentName')]"
+    }
+  }
+}
