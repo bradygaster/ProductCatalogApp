@@ -31,8 +31,6 @@ services:
     ports:
       - "8080:80"
       - "44320:443"
-    environment:
-      - ASPNETCORE_ENVIRONMENT=Development
     depends_on:
       - sqlserver
     networks:

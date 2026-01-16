@@ -12,12 +12,8 @@ services:
   productcatalog-web:
     environment:
       # Local development environment variables
-      - ASPNETCORE_ENVIRONMENT=Development
       - ConnectionStrings__DefaultConnection=Server=sqlserver,1433;Database=ProductCatalog;User Id=sa;Password=YourStrong@Passw0rd;TrustServerCertificate=True
       - OrderQueuePath=.\\Private$\\ProductCatalogOrders
-    volumes:
-      # Enable hot reload for local development (if applicable)
-      - ./ProductCatalog:/inetpub/wwwroot:ro
     ports:
       # Map to different local ports if needed
       - "8080:80"

@@ -15,7 +15,7 @@ COPY . .
 
 # Build the web application
 WORKDIR /src/ProductCatalog
-RUN msbuild ProductCatalog.csproj /p:Configuration=Release /p:OutputPath=/app/out /p:DeployOnBuild=true /p:PublishProfile=Release
+RUN msbuild ProductCatalog.csproj /p:Configuration=Release /p:DeployOnBuild=true /p:WebPublishMethod=FileSystem /p:PublishUrl=/app/out /p:DeleteExistingFiles=false
 
 # Runtime stage
 FROM mcr.microsoft.com/dotnet/framework/aspnet:4.8.1 AS runtime
