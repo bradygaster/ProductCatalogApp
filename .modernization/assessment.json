@@ -1,0 +1,325 @@
+{
+  "version": "1.0",
+  "assessmentDate": "2026-01-16T23:48:06.649Z",
+  "repository": {
+    "name": "ProductCatalogApp",
+    "owner": "bradygaster"
+  },
+  "currentState": {
+    "framework": {
+      "name": ".NET Framework",
+      "version": "4.8.1",
+      "projectFormat": "Legacy .csproj"
+    },
+    "webFramework": {
+      "name": "ASP.NET MVC",
+      "version": "5.2.9"
+    },
+    "technologies": [
+      {
+        "name": "WCF (Windows Communication Foundation)",
+        "usage": "ProductServiceLibrary - service layer",
+        "locations": [
+          "ProductServiceLibrary/ProductService.cs",
+          "ProductServiceLibrary/IProductService.cs"
+        ]
+      },
+      {
+        "name": "MSMQ (Microsoft Message Queue)",
+        "usage": "OrderQueueService - order processing",
+        "locations": [
+          "ProductCatalog/Services/OrderQueueService.cs"
+        ]
+      },
+      {
+        "name": "System.Web",
+        "usage": "Web dependencies, Session state, MVC framework",
+        "locations": [
+          "ProductCatalog/Global.asax.cs",
+          "ProductCatalog/Controllers/HomeController.cs"
+        ]
+      }
+    ],
+    "dependencies": [
+      {
+        "name": "Microsoft.AspNet.Mvc",
+        "version": "5.2.9"
+      },
+      {
+        "name": "Microsoft.AspNet.WebPages",
+        "version": "3.2.9"
+      },
+      {
+        "name": "Microsoft.AspNet.Razor",
+        "version": "3.2.9"
+      },
+      {
+        "name": "Newtonsoft.Json",
+        "version": "13.0.3"
+      },
+      {
+        "name": "System.Messaging",
+        "version": "Framework provided"
+      },
+      {
+        "name": "System.ServiceModel",
+        "version": "Framework provided"
+      }
+    ],
+    "projects": [
+      {
+        "name": "ProductCatalog",
+        "type": "ASP.NET MVC Web Application",
+        "framework": "net481",
+        "path": "ProductCatalog/ProductCatalog.csproj"
+      },
+      {
+        "name": "ProductServiceLibrary",
+        "type": "WCF Service Library",
+        "framework": "net481",
+        "path": "ProductServiceLibrary/ProductServiceLibrary.csproj"
+      }
+    ]
+  },
+  "targetState": {
+    "framework": {
+      "name": ".NET",
+      "version": "10.0",
+      "projectFormat": "SDK-style .csproj"
+    },
+    "webFramework": {
+      "name": "ASP.NET Core MVC",
+      "version": "10.0"
+    },
+    "compute": {
+      "platform": "Azure Container Apps",
+      "containerization": "Required"
+    },
+    "technologies": [
+      {
+        "name": "gRPC",
+        "replaces": "WCF",
+        "purpose": "Service layer communication"
+      },
+      {
+        "name": "Azure Service Bus",
+        "replaces": "MSMQ",
+        "purpose": "Message queue for order processing"
+      }
+    ]
+  },
+  "legacyPatterns": [
+    {
+      "pattern": "WCF Service Contract",
+      "severity": "High",
+      "effort": "High",
+      "description": "WCF service with ServiceContract and OperationContract attributes",
+      "files": [
+        "ProductServiceLibrary/IProductService.cs",
+        "ProductServiceLibrary/ProductService.cs"
+      ],
+      "recommendation": "Migrate to gRPC with proto definitions and generated service stubs"
+    },
+    {
+      "pattern": "MSMQ Message Queue",
+      "severity": "High",
+      "effort": "Medium",
+      "description": "System.Messaging MSMQ for order queue processing",
+      "files": [
+        "ProductCatalog/Services/OrderQueueService.cs"
+      ],
+      "recommendation": "Replace with Azure Service Bus using Azure.Messaging.ServiceBus package"
+    },
+    {
+      "pattern": "ASP.NET MVC (Non-Core)",
+      "severity": "High",
+      "effort": "High",
+      "description": "Legacy ASP.NET MVC 5 application with System.Web dependencies",
+      "files": [
+        "ProductCatalog/Controllers/HomeController.cs",
+        "ProductCatalog/Global.asax.cs"
+      ],
+      "recommendation": "Migrate to ASP.NET Core MVC with Program.cs and updated controller patterns"
+    },
+    {
+      "pattern": "Legacy Project Format",
+      "severity": "Medium",
+      "effort": "Medium",
+      "description": "Old-style .csproj files with explicit file references",
+      "files": [
+        "ProductCatalog/ProductCatalog.csproj",
+        "ProductServiceLibrary/ProductServiceLibrary.csproj"
+      ],
+      "recommendation": "Convert to SDK-style project format with simplified structure"
+    },
+    {
+      "pattern": "Session State",
+      "severity": "Medium",
+      "effort": "Medium",
+      "description": "In-memory session state for shopping cart",
+      "files": [
+        "ProductCatalog/Controllers/HomeController.cs"
+      ],
+      "recommendation": "Implement distributed cache using Redis or Azure Cache for Redis"
+    },
+    {
+      "pattern": "WCF Client Proxy",
+      "severity": "Medium",
+      "effort": "Medium",
+      "description": "Generated WCF client proxy for service communication",
+      "files": [
+        "ProductCatalog/Connected Services/ProductServiceReference/Reference.cs"
+      ],
+      "recommendation": "Replace with gRPC client generated from proto files"
+    },
+    {
+      "pattern": "Web.config Configuration",
+      "severity": "Low",
+      "effort": "Low",
+      "description": "XML-based configuration in Web.config and App.config",
+      "files": [
+        "ProductCatalog/Web.config",
+        "ProductServiceLibrary/App.config"
+      ],
+      "recommendation": "Migrate to appsettings.json and environment variables"
+    }
+  ],
+  "migrationEstimate": {
+    "complexity": "High",
+    "estimatedEffort": "4-6 weeks",
+    "riskLevel": "Medium",
+    "breakingChanges": [
+      "WCF to gRPC protocol change requires client updates",
+      "MSMQ to Azure Service Bus requires infrastructure changes",
+      "ASP.NET MVC to Core requires controller and view updates",
+      "Session state migration requires distributed cache setup"
+    ]
+  },
+  "recommendations": [
+    {
+      "priority": "High",
+      "category": "Framework",
+      "recommendation": "Upgrade .NET Framework 4.8.1 to .NET 10",
+      "benefits": [
+        "Cross-platform support (Linux containers)",
+        "Better performance",
+        "Modern language features",
+        "Long-term support"
+      ]
+    },
+    {
+      "priority": "High",
+      "category": "Compute",
+      "recommendation": "Deploy to Azure Container Apps",
+      "benefits": [
+        "Serverless container hosting",
+        "Auto-scaling",
+        "Pay-per-use pricing",
+        "Integrated with Azure services"
+      ]
+    },
+    {
+      "priority": "High",
+      "category": "Communication",
+      "recommendation": "Migrate WCF to gRPC",
+      "benefits": [
+        "Better performance",
+        "Cross-platform support",
+        "HTTP/2 based",
+        "Strong typing with Protocol Buffers"
+      ]
+    },
+    {
+      "priority": "High",
+      "category": "Messaging",
+      "recommendation": "Replace MSMQ with Azure Service Bus",
+      "benefits": [
+        "Cloud-native messaging",
+        "High availability and reliability",
+        "No infrastructure management",
+        "Advanced features (dead-letter queue, scheduled messages)"
+      ]
+    },
+    {
+      "priority": "Medium",
+      "category": "State Management",
+      "recommendation": "Implement distributed cache",
+      "benefits": [
+        "Scalability across multiple instances",
+        "Session persistence",
+        "Better performance"
+      ]
+    },
+    {
+      "priority": "Medium",
+      "category": "Monitoring",
+      "recommendation": "Add Application Insights",
+      "benefits": [
+        "Application performance monitoring",
+        "Distributed tracing",
+        "Custom metrics and logs"
+      ]
+    }
+  ],
+  "migrationPhases": [
+    {
+      "phase": 1,
+      "name": "Project Structure Modernization",
+      "tasks": [
+        "Convert projects to SDK-style format",
+        "Upgrade to .NET 10",
+        "Update NuGet packages to .NET 10 compatible versions"
+      ]
+    },
+    {
+      "phase": 2,
+      "name": "Web Application Migration",
+      "tasks": [
+        "Migrate ASP.NET MVC to ASP.NET Core MVC",
+        "Replace System.Web dependencies",
+        "Implement distributed cache for session state",
+        "Update bundling and minification"
+      ]
+    },
+    {
+      "phase": 3,
+      "name": "Service Layer Migration",
+      "tasks": [
+        "Design gRPC service contract (.proto files)",
+        "Implement gRPC service",
+        "Update client to use gRPC",
+        "Remove WCF dependencies"
+      ]
+    },
+    {
+      "phase": 4,
+      "name": "Messaging Migration",
+      "tasks": [
+        "Set up Azure Service Bus namespace",
+        "Implement Service Bus sender and receiver",
+        "Replace MSMQ OrderQueueService",
+        "Test message processing"
+      ]
+    },
+    {
+      "phase": 5,
+      "name": "Containerization",
+      "tasks": [
+        "Create Dockerfile for web application",
+        "Create Dockerfile for service",
+        "Test containers locally",
+        "Create Azure Container Apps infrastructure"
+      ]
+    },
+    {
+      "phase": 6,
+      "name": "Testing and Deployment",
+      "tasks": [
+        "Integration testing",
+        "Performance testing",
+        "Deploy to Azure Container Apps",
+        "Monitor and optimize"
+      ]
+    }
+  ]
+}

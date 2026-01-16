@@ -1,0 +1,58 @@
+# Modernization Playbook for ProductCatalogApp
+# This file defines the migration preferences and target technologies
+
+version: "1.0"
+
+# Target runtime and framework
+target:
+  framework: "net10.0"
+  runtime: "dotnet"
+  version: "10.0"
+
+# Target Azure compute platform
+compute:
+  platform: "Azure Container Apps"
+  containerRegistry: "Azure Container Registry"
+  
+# Migration mappings for legacy technologies
+migrations:
+  # Web framework migration
+  web:
+    from: "ASP.NET MVC 5"
+    to: "ASP.NET Core MVC"
+    notes: "Migrate from ASP.NET MVC 5.2.9 (.NET Framework 4.8.1) to ASP.NET Core MVC on .NET 10"
+    
+  # WCF to gRPC migration
+  wcf:
+    from: "WCF (Windows Communication Foundation)"
+    to: "gRPC"
+    notes: "Migrate WCF service (ProductServiceLibrary) to gRPC for cross-platform support"
+    
+  # Message queue migration
+  messaging:
+    from: "MSMQ (Microsoft Message Queue)"
+    to: "Azure Service Bus"
+    notes: "Replace System.Messaging MSMQ implementation with Azure Service Bus for cloud-native messaging"
+    
+  # Project format
+  projectFormat:
+    from: "Legacy .csproj"
+    to: "SDK-style .csproj"
+    notes: "Convert old-style project files to SDK-style format for .NET 10 compatibility"
+
+# Containerization strategy
+containerization:
+  enabled: true
+  baseImage: "mcr.microsoft.com/dotnet/aspnet:10.0"
+  buildImage: "mcr.microsoft.com/dotnet/sdk:10.0"
+  exposedPort: 8080
+  
+# Additional modernization recommendations
+recommendations:
+  - "Replace Session state with distributed cache (Redis/Azure Cache for Redis)"
+  - "Update authentication to use ASP.NET Core Identity or Azure AD"
+  - "Replace System.Web dependencies with ASP.NET Core equivalents"
+  - "Update bundling and minification to use modern tools"
+  - "Consider separating frontend and backend for better scalability"
+  - "Implement health checks for Azure Container Apps"
+  - "Add logging using ILogger and Application Insights"
