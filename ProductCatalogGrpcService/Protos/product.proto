@@ -1,0 +1,133 @@
+syntax = "proto3";
+
+option csharp_namespace = "ProductCatalogGrpcService";
+
+package product;
+
+import "google/protobuf/timestamp.proto";
+
+// The product service definition.
+service ProductService {
+  // Get all products
+  rpc GetAllProducts (EmptyRequest) returns (ProductListResponse);
+  
+  // Get a product by ID
+  rpc GetProductById (ProductByIdRequest) returns (ProductResponse);
+  
+  // Get products by category
+  rpc GetProductsByCategory (ProductsByCategoryRequest) returns (ProductListResponse);
+  
+  // Search products
+  rpc SearchProducts (SearchProductsRequest) returns (ProductListResponse);
+  
+  // Get all categories
+  rpc GetCategories (EmptyRequest) returns (CategoryListResponse);
+  
+  // Create a new product
+  rpc CreateProduct (CreateProductRequest) returns (ProductResponse);
+  
+  // Update an existing product
+  rpc UpdateProduct (UpdateProductRequest) returns (UpdateProductResponse);
+  
+  // Delete a product
+  rpc DeleteProduct (DeleteProductRequest) returns (DeleteProductResponse);
+  
+  // Get products by price range
+  rpc GetProductsByPriceRange (ProductsByPriceRangeRequest) returns (ProductListResponse);
+}
+
+// Empty request message
+message EmptyRequest {
+}
+
+// Product message
+message Product {
+  int32 id = 1;
+  string name = 2;
+  string description = 3;
+  double price = 4;
+  string category = 5;
+  string sku = 6;
+  int32 stock_quantity = 7;
+  string image_url = 8;
+  bool is_active = 9;
+  google.protobuf.Timestamp created_date = 10;
+  google.protobuf.Timestamp last_modified_date = 11;
+}
+
+// Category message
+message Category {
+  int32 id = 1;
+  string name = 2;
+  string description = 3;
+}
+
+// Request messages
+message ProductByIdRequest {
+  int32 product_id = 1;
+}
+
+message ProductsByCategoryRequest {
+  string category = 1;
+}
+
+message SearchProductsRequest {
+  string search_term = 1;
+}
+
+message CreateProductRequest {
+  string name = 1;
+  string description = 2;
+  double price = 3;
+  string category = 4;
+  string sku = 5;
+  int32 stock_quantity = 6;
+  string image_url = 7;
+}
+
+message UpdateProductRequest {
+  int32 id = 1;
+  string name = 2;
+  string description = 3;
+  double price = 4;
+  string category = 5;
+  string sku = 6;
+  int32 stock_quantity = 7;
+  string image_url = 8;
+  bool is_active = 9;
+}
+
+message DeleteProductRequest {
+  int32 product_id = 1;
+}
+
+message ProductsByPriceRangeRequest {
+  double min_price = 1;
+  double max_price = 2;
+}
+
+// Response messages
+message ProductResponse {
+  Product product = 1;
+  string error_message = 2;
+}
+
+message ProductListResponse {
+  repeated Product products = 1;
+  string error_message = 2;
+}
+
+message CategoryListResponse {
+  repeated Category categories = 1;
+  string error_message = 2;
+}
+
+message UpdateProductResponse {
+  bool success = 1;
+  string error_message = 2;
+}
+
+message DeleteProductResponse {
+  bool success = 1;
+  string error_message = 2;
+}

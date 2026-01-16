@@ -3,4 +3,5 @@
     <BuildDependency Project="ProductServiceLibrary/ProductServiceLibrary.csproj" />
   </Project>
   <Project Path="ProductServiceLibrary/ProductServiceLibrary.csproj" Id="58ab8db9-4a79-4ca5-8986-098de415cd88" />
+  <Project Path="ProductCatalogGrpcService/ProductCatalogGrpcService.csproj" Id="a1b2c3d4-e5f6-4a5b-9c8d-7e6f5a4b3c2d" />
 </Solution>
