@@ -193,9 +193,11 @@ namespace ProductCatalog.Controllers
                     });
                 }
 
-                // Send order to MSMQ
-                var queueService = new OrderQueueService();
-                queueService.SendOrder(order);
+                // Send order to Azure Service Bus
+                using (var queueService = new OrderQueueService())
+                {
+                    queueService.SendOrder(order);
+                }
 
                 // Clear the cart
                 Session["Cart"] = new List<CartItem>();
