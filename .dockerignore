@@ -1,0 +1,56 @@
+# Build artifacts
+**/bin/
+**/obj/
+**/out/
+**/TestResults/
+
+# IDE files
+.vs/
+.vscode/
+.idea/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+
+# Git history
+.git/
+.gitignore
+.gitattributes
+
+# Test results and coverage
+**/TestResults/
+**/*.trx
+**/*.coverage
+**/*.coveragexml
+coverage*.json
+coverage*.xml
+coverage*.info
+
+# NuGet packages (will be restored during build)
+**/packages/
+*.nupkg
+*.snupkg
+
+# Build logs
+*.log
+*.vspscc
+*.vssscc
+
+# Temporary files
+**/tmp/
+**/temp/
+**/*.tmp
+**/*.bak
+**/*.swp
+*~
+
+# Documentation
+README.md
+*.md
+docs/
+
+# Docker files themselves
+Dockerfile*
+docker-compose*
+.dockerignore

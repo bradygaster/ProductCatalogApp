@@ -1,0 +1,49 @@
+version: '3.8'
+
+services:
+  # SQL Server for database
+  sqlserver:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    container_name: productcatalog-sqlserver
+    environment:
+      - ACCEPT_EULA=Y
+      - SA_PASSWORD=YourStrong@Passw0rd
+      - MSSQL_PID=Developer
+    ports:
+      - "1433:1433"
+    volumes:
+      - sqlserver-data:/var/opt/mssql
+    networks:
+      - productcatalog-network
+    healthcheck:
+      test: /opt/mssql-tools/bin/sqlcmd -S localhost -U sa -P "YourStrong@Passw0rd" -Q "SELECT 1" || exit 1
+      interval: 10s
+      timeout: 3s
+      retries: 10
+      start_period: 10s
+
+  # ProductCatalog Web Application
+  productcatalog-web:
+    build:
+      context: .
+      dockerfile: ProductCatalog/Dockerfile
+    container_name: productcatalog-web
+    ports:
+      - "8080:80"
+      - "44320:443"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+    depends_on:
+      - sqlserver
+    networks:
+      - productcatalog-network
+    volumes:
+      - web-logs:/inetpub/wwwroot/logs
+
+networks:
+  productcatalog-network:
+    driver: bridge
+
+volumes:
+  sqlserver-data:
+  web-logs:

@@ -1,0 +1,24 @@
+version: '3.8'
+
+services:
+  sqlserver:
+    environment:
+      # Override with local development settings
+      - MSSQL_COLLATION=SQL_Latin1_General_CP1_CI_AS
+    volumes:
+      # Mount local data directory for persistence during development
+      - ./data/sqlserver:/var/opt/mssql/data
+
+  productcatalog-web:
+    environment:
+      # Local development environment variables
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ConnectionStrings__DefaultConnection=Server=sqlserver,1433;Database=ProductCatalog;User Id=sa;Password=YourStrong@Passw0rd;TrustServerCertificate=True
+      - OrderQueuePath=.\\Private$\\ProductCatalogOrders
+    volumes:
+      # Enable hot reload for local development (if applicable)
+      - ./ProductCatalog:/inetpub/wwwroot:ro
+    ports:
+      # Map to different local ports if needed
+      - "8080:80"
+      - "44320:443"
