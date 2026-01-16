@@ -122,28 +122,44 @@ namespace ProductCatalog.Services
 
         public int GetQueueMessageCount()
         {
-            return GetQueueMessageCountAsync().GetAwaiter().GetResult();
+            // Note: Getting message count requires Azure.Messaging.ServiceBus.Administration package
+            // This method is not implemented in the current migration to keep dependencies minimal
+            throw new NotImplementedException(
+                "GetQueueMessageCount requires the Azure.Messaging.ServiceBus.Administration package. " +
+                "Install the package and use ServiceBusAdministrationClient.GetQueueRuntimePropertiesAsync() to get the queue message count.");
         }
 
         public async Task<int> GetQueueMessageCountAsync()
         {
-            try
-            {
-                // Note: Getting message count requires management operations
-                // For production, use Azure.Messaging.ServiceBus.Administration
-                // For now, return 0 as this is not critical functionality
-                return 0;
-            }
-            catch (Exception)
-            {
-                return 0;
-            }
+            // Note: Getting message count requires Azure.Messaging.ServiceBus.Administration package
+            // This method is not implemented in the current migration to keep dependencies minimal
+            throw new NotImplementedException(
+                "GetQueueMessageCountAsync requires the Azure.Messaging.ServiceBus.Administration package. " +
+                "Install the package and use ServiceBusAdministrationClient.GetQueueRuntimePropertiesAsync() to get the queue message count.");
         }
 
         public void Dispose()
         {
-            _sender?.DisposeAsync().GetAwaiter().GetResult();
-            _client?.DisposeAsync().GetAwaiter().GetResult();
+            // Dispose sender and client synchronously
+            // Note: This uses blocking calls which is acceptable for Dispose()
+            // as the object is being finalized
+            try
+            {
+                _sender?.CloseAsync().ConfigureAwait(false).GetAwaiter().GetResult();
+            }
+            catch
+            {
+                // Swallow exceptions during disposal
+            }
+
+            try
+            {
+                _client?.DisposeAsync().ConfigureAwait(false).GetAwaiter().GetResult();
+            }
+            catch
+            {
+                // Swallow exceptions during disposal
+            }
         }
     }
 }
