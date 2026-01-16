@@ -134,6 +134,26 @@ The following Microsoft.Extensions.Configuration packages have been added to sup
 - ✅ OrderQueueService updated to use new configuration
 - ✅ Backward compatibility maintained with web.config
 
+## Deployment Best Practices
+
+### Configuration File Deployment
+
+While all environment-specific configuration files are included in the project, consider these deployment strategies:
+
+**Option 1: Deploy All Files (Recommended for simplicity)**
+- Deploy all appsettings.*.json files
+- Set the `ASPNETCORE_ENVIRONMENT` variable appropriately for each environment
+- The application will automatically load only the relevant configuration
+
+**Option 2: Deploy Only Required Files (More secure)**
+- Deploy only `appsettings.json` and the specific environment file (e.g., `appsettings.Production.json`)
+- This prevents potential configuration leaks between environments
+- Requires different build configurations per environment
+
+**Option 3: Configuration Transformation**
+- Use MSBuild or deployment tools to transform/replace configuration files during deployment
+- Most secure but requires additional tooling
+
 ## Next Steps
 
 As you add more configurable settings to the application, add them to the appropriate appsettings.json files and update your code to use the `AppConfiguration` class to access them.
