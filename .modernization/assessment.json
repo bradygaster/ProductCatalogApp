@@ -1,0 +1,522 @@
+{
+  "assessmentMetadata": {
+    "assessmentDate": "2026-01-16T22:19:12.842Z",
+    "repository": "bradygaster/ProductCatalogApp",
+    "assessmentPhase": "ASSESS",
+    "assessmentVersion": "1.0",
+    "assessedBy": "GitHub Copilot Agent"
+  },
+  "complexityScore": {
+    "overall": 68,
+    "interpretation": "Medium-High",
+    "breakdown": {
+      "legacyFrameworkVersion": {
+        "weight": 0.15,
+        "score": 85,
+        "weighted": 12.75
+      },
+      "projectFormat": {
+        "weight": 0.10,
+        "score": 100,
+        "weighted": 10.00
+      },
+      "legacyPatterns": {
+        "weight": 0.30,
+        "score": 90,
+        "weighted": 27.00
+      },
+      "dependencyCount": {
+        "weight": 0.10,
+        "score": 50,
+        "weighted": 5.00
+      },
+      "architectureComplexity": {
+        "weight": 0.15,
+        "score": 40,
+        "weighted": 6.00
+      },
+      "databaseOrm": {
+        "weight": 0.10,
+        "score": 50,
+        "weighted": 5.00
+      },
+      "externalDependencies": {
+        "weight": 0.10,
+        "score": 20,
+        "weighted": 2.00
+      },
+      "codeSize": {
+        "weight": 0.00,
+        "score": 30,
+        "weighted": 0.00
+      }
+    }
+  },
+  "estimatedEffort": {
+    "minimumWeeks": 2,
+    "recommendedWeeks": 5,
+    "completeWeeks": 8,
+    "difficultyLevel": "Intermediate to Advanced"
+  },
+  "solution": {
+    "file": "ProductCatalogApp.slnx",
+    "format": "XML",
+    "projectCount": 2
+  },
+  "projects": [
+    {
+      "name": "ProductCatalog",
+      "path": "ProductCatalog/ProductCatalog.csproj",
+      "type": "ASP.NET MVC 5 Web Application",
+      "framework": ".NET Framework 4.8.1",
+      "format": "Legacy",
+      "sdkStyle": false,
+      "toolsVersion": "15.0",
+      "projectTypeGuids": [
+        "{349c5851-65df-11da-9384-00065b846f21}",
+        "{fae04ec0-301f-11d3-bf4b-00c04f79efbc}"
+      ],
+      "estimatedLinesOfCode": 2000,
+      "nugetPackages": 16,
+      "assemblyReferences": 48
+    },
+    {
+      "name": "ProductServiceLibrary",
+      "path": "ProductServiceLibrary/ProductServiceLibrary.csproj",
+      "type": "WCF Service Library",
+      "framework": ".NET Framework 4.8.1",
+      "format": "Legacy",
+      "sdkStyle": false,
+      "toolsVersion": "15.0",
+      "projectTypeGuids": [
+        "{3D9AD99F-2412-4246-B90B-4EAA41C64699}",
+        "{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}"
+      ],
+      "estimatedLinesOfCode": 800,
+      "nugetPackages": 0,
+      "assemblyReferences": 7
+    }
+  ],
+  "legacyPatterns": [
+    {
+      "pattern": "Windows Communication Foundation (WCF)",
+      "severity": "CRITICAL",
+      "category": "Communication",
+      "files": [
+        "ProductServiceLibrary/IProductService.cs",
+        "ProductServiceLibrary/ProductService.cs",
+        "ProductServiceLibrary/App.config",
+        "ProductCatalog/Web.config",
+        "ProductCatalog/Connected Services/ProductServiceReference/*"
+      ],
+      "details": {
+        "contracts": 9,
+        "binding": "BasicHttpBinding",
+        "endpoint": "http://localhost:8733/Design_Time_Addresses/ProductServiceLibrary/Service1/"
+      },
+      "impact": "WCF is not supported in .NET Core/.NET 5+. Requires migration to REST API, gRPC, or CoreWCF.",
+      "migrationPath": "Replace with ASP.NET Core Web API (REST) or gRPC",
+      "estimatedEffort": "2-3 days"
+    },
+    {
+      "pattern": "Microsoft Message Queuing (MSMQ)",
+      "severity": "CRITICAL",
+      "category": "Messaging",
+      "files": [
+        "ProductCatalog/Services/OrderQueueService.cs",
+        "ProductCatalog/Web.config",
+        "MSMQ_SETUP.md"
+      ],
+      "details": {
+        "namespace": "System.Messaging",
+        "queuePath": ".\\Private$\\ProductCatalogOrders",
+        "serialization": "XML",
+        "operations": ["Create", "Send", "Receive"]
+      },
+      "impact": "MSMQ is Windows-only and deprecated. Not available in .NET Core/.NET 5+.",
+      "migrationPath": "Replace with Azure Service Bus, RabbitMQ, or Apache Kafka",
+      "estimatedEffort": "2-3 days"
+    },
+    {
+      "pattern": "ASP.NET MVC 5",
+      "severity": "HIGH",
+      "category": "Web Framework",
+      "files": [
+        "ProductCatalog/Controllers/HomeController.cs",
+        "ProductCatalog/Views/**/*.cshtml",
+        "ProductCatalog/App_Start/*",
+        "ProductCatalog/Global.asax.cs"
+      ],
+      "details": {
+        "version": "5.2.9",
+        "namespace": "System.Web.Mvc",
+        "startup": "Global.asax"
+      },
+      "impact": "ASP.NET MVC 5 is in maintenance mode. System.Web not available in .NET Core.",
+      "migrationPath": "Migrate to ASP.NET Core MVC",
+      "estimatedEffort": "3-5 days"
+    },
+    {
+      "pattern": "Session State Management",
+      "severity": "HIGH",
+      "category": "State Management",
+      "files": [
+        "ProductCatalog/Controllers/HomeController.cs"
+      ],
+      "details": {
+        "type": "In-process session",
+        "usage": "Shopping cart storage",
+        "occurrences": 8
+      },
+      "impact": "Not scalable, single-server affinity required. Incompatible with cloud-native architectures.",
+      "migrationPath": "Replace with distributed cache (Redis) or database-backed storage",
+      "estimatedEffort": "1-2 days"
+    },
+    {
+      "pattern": "In-Memory Data Storage",
+      "severity": "MEDIUM",
+      "category": "Data Persistence",
+      "files": [
+        "ProductServiceLibrary/ProductRepository.cs"
+      ],
+      "details": {
+        "storage": "Static List<T>",
+        "threadSafety": "Manual locking",
+        "persistence": false
+      },
+      "impact": "Data lost on restart. Not suitable for production.",
+      "migrationPath": "Implement Entity Framework Core with SQL Server/PostgreSQL",
+      "estimatedEffort": "2-3 days"
+    },
+    {
+      "pattern": "packages.config",
+      "severity": "LOW",
+      "category": "Package Management",
+      "files": [
+        "ProductCatalog/packages.config"
+      ],
+      "details": {
+        "format": "Legacy NuGet format",
+        "packageCount": 16
+      },
+      "impact": "Verbose package management. No transitive dependency support.",
+      "migrationPath": "Convert to PackageReference (automatic during SDK-style conversion)",
+      "estimatedEffort": "Automatic"
+    }
+  ],
+  "dependencies": {
+    "nugetPackages": [
+      {
+        "project": "ProductCatalog",
+        "package": "Antlr",
+        "version": "3.5.0.2",
+        "status": "LEGACY",
+        "action": "REMOVE",
+        "notes": "Used by Web.Optimization, not needed in ASP.NET Core"
+      },
+      {
+        "project": "ProductCatalog",
+        "package": "bootstrap",
+        "version": "5.2.3",
+        "status": "CURRENT",
+        "action": "KEEP",
+        "notes": "Front-end framework, compatible with Core"
+      },
+      {
+        "project": "ProductCatalog",
+        "package": "jQuery",
+        "version": "3.7.0",
+        "status": "CURRENT",
+        "action": "KEEP",
+        "notes": "JavaScript library, compatible"
+      },
+      {
+        "project": "ProductCatalog",
+        "package": "jQuery.Validation",
+        "version": "1.19.5",
+        "status": "CURRENT",
+        "action": "KEEP",
+        "notes": "Compatible"
+      },
+      {
+        "project": "ProductCatalog",
+        "package": "Microsoft.AspNet.Mvc",
+        "version": "5.2.9",
+        "status": "LEGACY",
+        "action": "REPLACE",
+        "notes": "Replace with ASP.NET Core MVC"
+      },
+      {
+        "project": "ProductCatalog",
+        "package": "Microsoft.AspNet.Razor",
+        "version": "3.2.9",
+        "status": "LEGACY",
+        "action": "REPLACE",
+        "notes": "Replace with ASP.NET Core Razor"
+      },
+      {
+        "project": "ProductCatalog",
+        "package": "Microsoft.AspNet.Web.Optimization",
+        "version": "1.1.3",
+        "status": "LEGACY",
+        "action": "REPLACE",
+        "notes": "Replace with Core bundling/minification"
+      },
+      {
+        "project": "ProductCatalog",
+        "package": "Microsoft.AspNet.WebPages",
+        "version": "3.2.9",
+        "status": "LEGACY",
+        "action": "REPLACE",
+        "notes": "Part of ASP.NET Core"
+      },
+      {
+        "project": "ProductCatalog",
+        "package": "Microsoft.CodeDom.Providers.DotNetCompilerPlatform",
+        "version": "2.0.1",
+        "status": "LEGACY",
+        "action": "REMOVE",
+        "notes": "Not needed in .NET Core"
+      },
+      {
+        "project": "ProductCatalog",
+        "package": "Microsoft.jQuery.Unobtrusive.Validation",
+        "version": "3.2.11",
+        "status": "LEGACY",
+        "action": "REPLACE",
+        "notes": "Has Core equivalent"
+      },
+      {
+        "project": "ProductCatalog",
+        "package": "Microsoft.Web.Infrastructure",
+        "version": "2.0.0",
+        "status": "LEGACY",
+        "action": "REMOVE",
+        "notes": "Not needed in Core"
+      },
+      {
+        "project": "ProductCatalog",
+        "package": "Modernizr",
+        "version": "2.8.3",
+        "status": "OUTDATED",
+        "action": "UPDATE_OR_REMOVE",
+        "notes": "Old version, review if still needed"
+      },
+      {
+        "project": "ProductCatalog",
+        "package": "Newtonsoft.Json",
+        "version": "13.0.3",
+        "status": "CURRENT",
+        "action": "KEEP_OR_REPLACE",
+        "notes": "Compatible, but Core has System.Text.Json"
+      },
+      {
+        "project": "ProductCatalog",
+        "package": "WebGrease",
+        "version": "1.6.0",
+        "status": "LEGACY",
+        "action": "REMOVE",
+        "notes": "Not needed in Core"
+      }
+    ],
+    "frameworkAssemblies": {
+      "critical": [
+        {
+          "assembly": "System.Messaging",
+          "usage": "MSMQ support",
+          "status": "DEPRECATED",
+          "availability": "Not in .NET Core"
+        },
+        {
+          "assembly": "System.ServiceModel",
+          "usage": "WCF client and service",
+          "status": "DEPRECATED",
+          "availability": "Not in .NET Core (CoreWCF available)"
+        },
+        {
+          "assembly": "System.Web",
+          "usage": "ASP.NET MVC 5",
+          "status": "DEPRECATED",
+          "availability": "Not in .NET Core"
+        },
+        {
+          "assembly": "System.Runtime.Serialization",
+          "usage": "WCF serialization",
+          "status": "LEGACY",
+          "availability": "Limited in .NET Core"
+        }
+      ]
+    },
+    "projectDependencies": [
+      {
+        "from": "ProductCatalog",
+        "to": "ProductServiceLibrary",
+        "type": "WCF Service Reference",
+        "mechanism": "Connected Services"
+      }
+    ]
+  },
+  "security": {
+    "issues": [
+      {
+        "category": "Authentication",
+        "severity": "HIGH",
+        "description": "No authentication mechanisms implemented",
+        "recommendation": "Implement JWT or Azure AD authentication"
+      },
+      {
+        "category": "Authorization",
+        "severity": "HIGH",
+        "description": "No authorization checks on endpoints",
+        "recommendation": "Add authorization policies and role-based access"
+      },
+      {
+        "category": "Transport Security",
+        "severity": "MEDIUM",
+        "description": "HTTP (not HTTPS) used for WCF service",
+        "recommendation": "Enforce HTTPS everywhere"
+      },
+      {
+        "category": "Session Security",
+        "severity": "MEDIUM",
+        "description": "Session hijacking risks, no CSRF protection",
+        "recommendation": "Implement CSRF tokens and secure session management"
+      },
+      {
+        "category": "Serialization",
+        "severity": "MEDIUM",
+        "description": "XML deserialization without validation (XXE risks)",
+        "recommendation": "Use secure JSON serialization with validation"
+      }
+    ]
+  },
+  "externalServices": [
+    {
+      "name": "WCF Product Service",
+      "type": "Internal WCF Service",
+      "endpoint": "http://localhost:8733/Design_Time_Addresses/ProductServiceLibrary/Service1/",
+      "protocol": "HTTP/SOAP",
+      "authentication": "None"
+    },
+    {
+      "name": "MSMQ Order Queue",
+      "type": "Local Message Queue",
+      "path": ".\\Private$\\ProductCatalogOrders",
+      "protocol": "MSMQ",
+      "platform": "Windows"
+    }
+  ],
+  "dataAccess": {
+    "entityFramework": false,
+    "entityFrameworkCore": false,
+    "database": false,
+    "strategy": "In-memory static repository",
+    "recommendation": "Implement Entity Framework Core with SQL Server or PostgreSQL"
+  },
+  "comInterop": {
+    "detected": false,
+    "pInvoke": false
+  },
+  "modernizationPriorities": [
+    {
+      "priority": 1,
+      "category": "CRITICAL",
+      "tasks": [
+        {
+          "task": "Replace WCF with ASP.NET Core Web API",
+          "effort": "2-3 days",
+          "impact": "HIGH"
+        },
+        {
+          "task": "Replace MSMQ with modern message queue",
+          "effort": "2-3 days",
+          "impact": "HIGH"
+        },
+        {
+          "task": "Migrate to .NET 8.0",
+          "effort": "3-5 days",
+          "impact": "HIGH"
+        }
+      ]
+    },
+    {
+      "priority": 2,
+      "category": "HIGH",
+      "tasks": [
+        {
+          "task": "Implement Entity Framework Core with database",
+          "effort": "2-3 days",
+          "impact": "MEDIUM"
+        },
+        {
+          "task": "Replace session-based cart with distributed cache",
+          "effort": "1-2 days",
+          "impact": "MEDIUM"
+        },
+        {
+          "task": "Add authentication and authorization",
+          "effort": "2-3 days",
+          "impact": "MEDIUM"
+        }
+      ]
+    },
+    {
+      "priority": 3,
+      "category": "MEDIUM",
+      "tasks": [
+        {
+          "task": "Modernize frontend",
+          "effort": "3-5 days",
+          "impact": "LOW"
+        },
+        {
+          "task": "Add comprehensive testing",
+          "effort": "3-5 days",
+          "impact": "MEDIUM"
+        },
+        {
+          "task": "Implement CI/CD pipeline",
+          "effort": "1-2 days",
+          "impact": "MEDIUM"
+        }
+      ]
+    }
+  ],
+  "risks": [
+    {
+      "category": "Technical",
+      "risk": "Breaking changes in migration",
+      "severity": "HIGH",
+      "mitigation": "Comprehensive testing, parallel run"
+    },
+    {
+      "category": "Technical",
+      "risk": "WCF to REST API conversion",
+      "severity": "MEDIUM",
+      "mitigation": "Clear API contract documentation, versioning"
+    },
+    {
+      "category": "Technical",
+      "risk": "MSMQ to cloud queue migration",
+      "severity": "MEDIUM",
+      "mitigation": "Message format compatibility, transaction handling"
+    },
+    {
+      "category": "Business",
+      "risk": "Downtime during migration",
+      "severity": "MEDIUM",
+      "mitigation": "Blue-green deployment, feature flags"
+    }
+  ],
+  "recommendations": {
+    "targetFramework": ".NET 8.0",
+    "webFramework": "ASP.NET Core MVC 8.0",
+    "apiFramework": "ASP.NET Core Web API 8.0",
+    "messageQueue": "Azure Service Bus (cloud) or RabbitMQ (on-premises)",
+    "database": "SQL Server with Entity Framework Core 8.0",
+    "caching": "Redis (Azure Cache for Redis or self-hosted)",
+    "authentication": "JWT with ASP.NET Core Identity",
+    "testing": "xUnit with FluentAssertions",
+    "cicd": "GitHub Actions"
+  }
+}
