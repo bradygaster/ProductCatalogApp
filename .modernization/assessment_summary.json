@@ -3,9 +3,9 @@
   "repository": "repo",
   "complexity_score": 4,
   "detected_patterns": [
-    "wcf_service",
+    "classic_mvc",
     "msmq",
-    "classic_mvc"
+    "wcf_service"
   ],
   "projects": [
     {
