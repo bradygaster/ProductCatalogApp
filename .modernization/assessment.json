@@ -1,0 +1,547 @@
+{
+  "assessmentVersion": "1.0",
+  "assessmentDate": "2026-01-17T01:31:45.628Z",
+  "repository": {
+    "name": "ProductCatalogApp",
+    "owner": "bradygaster",
+    "branch": "modernize/assess"
+  },
+  "summary": {
+    "currentState": {
+      "framework": ".NET Framework 4.8.1",
+      "projectType": "ASP.NET MVC 5 Web Application + WCF Service Library",
+      "deploymentTarget": "IIS on Windows Server",
+      "legacyPatterns": 7
+    },
+    "targetState": {
+      "framework": ".NET 10",
+      "projectType": "ASP.NET Core MVC + gRPC Service",
+      "deploymentTarget": "Azure Container Apps",
+      "modernPatterns": "Cloud-native, containerized, microservices"
+    },
+    "effortEstimate": {
+      "complexity": "Medium-High",
+      "estimatedDays": "15-20 days",
+      "riskLevel": "Medium"
+    }
+  },
+  "findings": {
+    "legacyPatterns": [
+      {
+        "id": "LP001",
+        "category": "Framework",
+        "pattern": ".NET Framework 4.8.1",
+        "location": [
+          "ProductCatalog/ProductCatalog.csproj",
+          "ProductServiceLibrary/ProductServiceLibrary.csproj"
+        ],
+        "impact": "High",
+        "description": "Application is using .NET Framework 4.8.1, which is Windows-only and does not support modern container deployment",
+        "recommendation": "Migrate to .NET 10 for cross-platform support, better performance, and modern features",
+        "effort": "High",
+        "migrationPath": {
+          "from": ".NET Framework 4.8.1",
+          "to": ".NET 10",
+          "steps": [
+            "Convert to SDK-style project format",
+            "Update target framework to net10.0",
+            "Replace .NET Framework-specific APIs with .NET Core equivalents",
+            "Update all NuGet packages to versions compatible with .NET 10"
+          ]
+        }
+      },
+      {
+        "id": "LP002",
+        "category": "Web Framework",
+        "pattern": "ASP.NET MVC 5",
+        "location": [
+          "ProductCatalog/ProductCatalog.csproj",
+          "ProductCatalog/Controllers/HomeController.cs",
+          "ProductCatalog/Global.asax.cs"
+        ],
+        "impact": "High",
+        "description": "Using ASP.NET MVC 5, which is legacy and not compatible with .NET Core",
+        "recommendation": "Migrate to ASP.NET Core MVC for modern web development",
+        "effort": "High",
+        "migrationPath": {
+          "from": "ASP.NET MVC 5",
+          "to": "ASP.NET Core MVC",
+          "steps": [
+            "Replace Global.asax with Program.cs and Startup.cs",
+            "Convert Web.config to appsettings.json",
+            "Replace System.Web dependencies",
+            "Update controller actions and filters",
+            "Migrate Razor views (minimal changes needed)",
+            "Update session state handling"
+          ],
+          "breakingChanges": [
+            "Session state requires distributed cache in container environment",
+            "TempData storage needs configuration",
+            "Authentication/authorization model changed"
+          ]
+        }
+      },
+      {
+        "id": "LP003",
+        "category": "Service Communication",
+        "pattern": "WCF (Windows Communication Foundation)",
+        "location": [
+          "ProductServiceLibrary/IProductService.cs",
+          "ProductServiceLibrary/ProductService.cs",
+          "ProductServiceLibrary/App.config",
+          "ProductCatalog/Web.config (client configuration)"
+        ],
+        "impact": "High",
+        "description": "Using WCF for service communication, which is not fully supported in .NET Core/.NET 5+",
+        "recommendation": "Migrate to gRPC for modern, high-performance service communication",
+        "effort": "Medium-High",
+        "migrationPath": {
+          "from": "WCF with basicHttpBinding",
+          "to": "gRPC",
+          "steps": [
+            "Define service contract in .proto files",
+            "Generate gRPC code from proto definitions",
+            "Implement gRPC service methods",
+            "Update client to use gRPC channel and client",
+            "Configure gRPC in ASP.NET Core",
+            "Add gRPC-Web if browser access is needed"
+          ],
+          "alternatives": [
+            {
+              "option": "REST API with ASP.NET Core Web API",
+              "pros": [
+                "Simpler migration",
+                "HTTP-based",
+                "Wide tooling support"
+              ],
+              "cons": [
+                "Less efficient than gRPC",
+                "More manual serialization"
+              ]
+            }
+          ]
+        },
+        "affectedOperations": [
+          "GetAllProducts",
+          "GetProductById",
+          "GetProductsByCategory",
+          "SearchProducts",
+          "GetCategories",
+          "CreateProduct",
+          "UpdateProduct",
+          "DeleteProduct",
+          "GetProductsByPriceRange"
+        ]
+      },
+      {
+        "id": "LP004",
+        "category": "Messaging",
+        "pattern": "MSMQ (Microsoft Message Queuing)",
+        "location": [
+          "ProductCatalog/Services/OrderQueueService.cs",
+          "ProductCatalog/Controllers/HomeController.cs (line 197-198)"
+        ],
+        "impact": "High",
+        "description": "Using MSMQ for order queue processing, which is Windows-only and not suitable for cloud/container deployment",
+        "recommendation": "Migrate to Azure Service Bus for cloud-native messaging",
+        "effort": "Medium",
+        "migrationPath": {
+          "from": "MSMQ",
+          "to": "Azure Service Bus",
+          "steps": [
+            "Create Azure Service Bus namespace and queue",
+            "Replace System.Messaging with Azure.Messaging.ServiceBus",
+            "Update OrderQueueService to use ServiceBusClient",
+            "Configure connection string in configuration",
+            "Update message serialization (JSON instead of XML)",
+            "Implement retry policies and error handling"
+          ],
+          "mapping": {
+            "MessageQueue": "ServiceBusClient",
+            "MessageQueue.Send()": "ServiceBusSender.SendMessageAsync()",
+            "MessageQueue.Receive()": "ServiceBusReceiver.ReceiveMessageAsync()",
+            "Message.Body": "ServiceBusMessage.Body",
+            "queuePath": "queueName + connection string"
+          }
+        },
+        "currentUsage": {
+          "queuePath": ".\\Private$\\ProductCatalogOrders",
+          "operations": [
+            "SendOrder",
+            "ReceiveOrder",
+            "GetQueueMessageCount"
+          ],
+          "messageType": "Order (XML serialized)"
+        },
+        "azureResources": {
+          "serviceBusNamespace": "productcatalog-servicebus",
+          "queueName": "orders",
+          "sku": "Standard (required for sessions if needed)"
+        }
+      },
+      {
+        "id": "LP005",
+        "category": "Project Format",
+        "pattern": "Legacy .csproj format",
+        "location": [
+          "ProductCatalog/ProductCatalog.csproj",
+          "ProductServiceLibrary/ProductServiceLibrary.csproj"
+        ],
+        "impact": "Medium",
+        "description": "Using old-style verbose .csproj format with explicit file listings",
+        "recommendation": "Convert to SDK-style project format for simpler management and better .NET Core compatibility",
+        "effort": "Low-Medium",
+        "migrationPath": {
+          "from": "Legacy .csproj",
+          "to": "SDK-style .csproj",
+          "steps": [
+            "Use 'dotnet new' or convert manually",
+            "Remove explicit file listings (use wildcards)",
+            "Update package references from packages.config",
+            "Simplify project properties",
+            "Remove unnecessary MSBuild imports"
+          ]
+        },
+        "benefits": [
+          "Simpler and more readable project files",
+          "Automatic file inclusion with wildcards",
+          "Better multi-targeting support",
+          "Integrated NuGet package management"
+        ]
+      },
+      {
+        "id": "LP006",
+        "category": "Session State",
+        "pattern": "In-Memory Session State",
+        "location": [
+          "ProductCatalog/Controllers/HomeController.cs (Session usage)",
+          "ProductCatalog/Web.config"
+        ],
+        "impact": "Medium",
+        "description": "Using in-memory session state which won't work across multiple container instances",
+        "recommendation": "Implement distributed cache using Azure Redis Cache",
+        "effort": "Low-Medium",
+        "migrationPath": {
+          "from": "System.Web.SessionState (in-memory)",
+          "to": "IDistributedCache with Redis",
+          "steps": [
+            "Add Microsoft.Extensions.Caching.StackExchangeRedis package",
+            "Configure Redis in appsettings.json",
+            "Update session configuration in Program.cs",
+            "Test session persistence across instances"
+          ]
+        },
+        "sessionUsage": {
+          "data": [
+            "Cart (List<CartItem>)"
+          ],
+          "controllers": [
+            "HomeController"
+          ]
+        },
+        "azureResources": {
+          "redisCache": "productcatalog-cache",
+          "sku": "Basic C0 (250 MB)"
+        }
+      },
+      {
+        "id": "LP007",
+        "category": "Configuration",
+        "pattern": "Web.config / App.config",
+        "location": [
+          "ProductCatalog/Web.config",
+          "ProductServiceLibrary/App.config"
+        ],
+        "impact": "Medium",
+        "description": "Using XML-based configuration files which are replaced by JSON in .NET Core",
+        "recommendation": "Migrate to appsettings.json and environment variables",
+        "effort": "Low",
+        "migrationPath": {
+          "from": "Web.config / App.config",
+          "to": "appsettings.json + Environment Variables",
+          "steps": [
+            "Create appsettings.json",
+            "Migrate appSettings section",
+            "Move connection strings",
+            "Configure services in Program.cs instead of config files",
+            "Use Azure Key Vault for secrets"
+          ]
+        },
+        "configurationItems": [
+          "OrderQueuePath",
+          "WCF service endpoints",
+          "Session state configuration",
+          "Compilation settings",
+          "HTTP runtime settings"
+        ]
+      }
+    ],
+    "dependencies": {
+      "legacyPackages": [
+        {
+          "name": "System.Web",
+          "category": "Framework",
+          "replacement": "Microsoft.AspNetCore.Http",
+          "notes": "Core ASP.NET functionality"
+        },
+        {
+          "name": "System.Web.Mvc",
+          "category": "Framework",
+          "replacement": "Microsoft.AspNetCore.Mvc",
+          "notes": "MVC framework"
+        },
+        {
+          "name": "System.ServiceModel",
+          "category": "Framework",
+          "replacement": "Grpc.AspNetCore",
+          "notes": "WCF replacement"
+        },
+        {
+          "name": "System.Messaging",
+          "category": "Framework",
+          "replacement": "Azure.Messaging.ServiceBus",
+          "notes": "MSMQ replacement"
+        },
+        {
+          "name": "Microsoft.AspNet.WebPages",
+          "category": "Package",
+          "replacement": "Built into ASP.NET Core",
+          "notes": "Razor pages support"
+        },
+        {
+          "name": "Microsoft.Web.Infrastructure",
+          "category": "Package",
+          "replacement": "Not needed",
+          "notes": "Legacy infrastructure"
+        },
+        {
+          "name": "Newtonsoft.Json",
+          "category": "Package",
+          "replacement": "System.Text.Json",
+          "notes": "Built-in JSON serialization (or keep Newtonsoft.Json if preferred)"
+        }
+      ],
+      "modernPackages": [
+        {
+          "name": "Microsoft.AspNetCore.Mvc",
+          "version": "10.0.0",
+          "purpose": "ASP.NET Core MVC framework"
+        },
+        {
+          "name": "Grpc.AspNetCore",
+          "version": "2.60.0+",
+          "purpose": "gRPC service hosting"
+        },
+        {
+          "name": "Azure.Messaging.ServiceBus",
+          "version": "7.17.0+",
+          "purpose": "Azure Service Bus client"
+        },
+        {
+          "name": "Microsoft.Extensions.Caching.StackExchangeRedis",
+          "version": "10.0.0",
+          "purpose": "Redis distributed cache"
+        },
+        {
+          "name": "Grpc.Tools",
+          "version": "2.60.0+",
+          "purpose": "gRPC code generation"
+        },
+        {
+          "name": "Google.Protobuf",
+          "version": "3.25.0+",
+          "purpose": "Protocol Buffers support"
+        }
+      ]
+    },
+    "codeMetrics": {
+      "totalProjects": 2,
+      "totalFiles": 16,
+      "estimatedLinesOfCode": 2500,
+      "controllers": 1,
+      "services": 2,
+      "models": 4,
+      "views": 5,
+      "wcfOperations": 9
+    }
+  },
+  "recommendations": {
+    "immediate": [
+      {
+        "priority": "High",
+        "action": "Create .NET 10 project structure",
+        "rationale": "Foundation for all other migrations"
+      },
+      {
+        "priority": "High",
+        "action": "Setup development environment with .NET 10 SDK",
+        "rationale": "Required for development and testing"
+      },
+      {
+        "priority": "High",
+        "action": "Create proto files for gRPC service definition",
+        "rationale": "Defines the new service contract"
+      },
+      {
+        "priority": "Medium",
+        "action": "Setup Azure Service Bus namespace",
+        "rationale": "Required for MSMQ migration testing"
+      }
+    ],
+    "phased": [
+      {
+        "phase": 1,
+        "name": "Foundation Migration",
+        "duration": "3-5 days",
+        "tasks": [
+          "Convert projects to SDK-style format",
+          "Migrate to .NET 10",
+          "Update NuGet packages",
+          "Resolve compilation errors"
+        ]
+      },
+      {
+        "phase": 2,
+        "name": "Service Layer Migration",
+        "duration": "4-6 days",
+        "tasks": [
+          "Define gRPC proto files",
+          "Implement gRPC service",
+          "Create gRPC client",
+          "Test service operations"
+        ]
+      },
+      {
+        "phase": 3,
+        "name": "Messaging Migration",
+        "duration": "2-3 days",
+        "tasks": [
+          "Create Azure Service Bus resources",
+          "Update OrderQueueService to use Service Bus",
+          "Update message serialization",
+          "Test message flow"
+        ]
+      },
+      {
+        "phase": 4,
+        "name": "Web Application Migration",
+        "duration": "4-5 days",
+        "tasks": [
+          "Migrate to ASP.NET Core MVC",
+          "Update controllers and views",
+          "Configure distributed session state",
+          "Update configuration system"
+        ]
+      },
+      {
+        "phase": 5,
+        "name": "Containerization",
+        "duration": "2-3 days",
+        "tasks": [
+          "Create Dockerfiles",
+          "Configure for Azure Container Apps",
+          "Setup health checks",
+          "Test container deployments"
+        ]
+      }
+    ]
+  },
+  "risks": {
+    "technical": [
+      {
+        "risk": "WCF to gRPC migration may require protocol changes",
+        "severity": "Medium",
+        "mitigation": "Run both services in parallel during transition, use adapter pattern"
+      },
+      {
+        "risk": "Session state migration may require code changes",
+        "severity": "Low",
+        "mitigation": "Test thoroughly with distributed cache, consider cookie-based state for cart"
+      },
+      {
+        "risk": "MSMQ message format incompatibility",
+        "severity": "Low",
+        "mitigation": "Update serialization to JSON, ensure message structure compatibility"
+      }
+    ],
+    "operational": [
+      {
+        "risk": "Azure resource costs",
+        "severity": "Low",
+        "mitigation": "Start with Basic/Standard tiers, monitor usage, implement cost alerts"
+      },
+      {
+        "risk": "Container deployment learning curve",
+        "severity": "Low",
+        "mitigation": "Follow Azure Container Apps documentation, use Azure samples"
+      }
+    ]
+  },
+  "azureInfrastructure": {
+    "requiredResources": [
+      {
+        "type": "Azure Container Apps Environment",
+        "name": "productcatalog-env",
+        "sku": "Consumption",
+        "estimatedCost": "$0.000024/vCPU-second + $0.000003/GiB-second"
+      },
+      {
+        "type": "Azure Container App",
+        "name": "productcatalog-web",
+        "configuration": {
+          "minReplicas": 1,
+          "maxReplicas": 10,
+          "cpu": "0.5",
+          "memory": "1Gi"
+        }
+      },
+      {
+        "type": "Azure Container App",
+        "name": "productcatalog-service",
+        "configuration": {
+          "minReplicas": 1,
+          "maxReplicas": 5,
+          "cpu": "0.5",
+          "memory": "1Gi"
+        }
+      },
+      {
+        "type": "Azure Service Bus Namespace",
+        "name": "productcatalog-servicebus",
+        "sku": "Standard",
+        "estimatedCost": "$0.05/million operations (after first 13M free per month)"
+      },
+      {
+        "type": "Azure Cache for Redis",
+        "name": "productcatalog-cache",
+        "sku": "Basic C0 (250 MB)",
+        "estimatedCost": "$0.016/hour (~$11.52/month)"
+      },
+      {
+        "type": "Azure Container Registry",
+        "name": "productcatalogacr",
+        "sku": "Basic",
+        "estimatedCost": "$5/month + storage"
+      }
+    ],
+    "estimatedMonthlyCost": {
+      "minimum": "$25-35/month",
+      "typical": "$50-75/month",
+      "notes": "Based on low-medium usage. Actual costs vary with traffic."
+    }
+  },
+  "tooling": {
+    "required": [
+      ".NET 10 SDK",
+      "Docker Desktop",
+      "Azure CLI",
+      "Visual Studio 2022 or VS Code with C# extension"
+    ],
+    "recommended": [
+      "Azure Service Bus Explorer",
+      "Redis Insight",
+      "Postman or gRPCurl for API testing",
+      "Azure Storage Explorer"
+    ]
+  }
+}

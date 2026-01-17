@@ -1,0 +1,145 @@
+name: Product Catalog App Modernization
+description: Modernization playbook for upgrading Product Catalog App to .NET 10 and Azure Container Apps
+
+# Migration Preferences
+preferences:
+  # Target framework version
+  targetFramework: net10.0
+  
+  # Target compute platform
+  compute:
+    platform: azure-container-apps
+    region: eastus
+    
+  # Technology migrations
+  migrations:
+    # WCF to gRPC migration
+    wcf:
+      target: grpc
+      reason: gRPC provides better performance, cross-platform support, and is the recommended modern alternative to WCF
+      
+    # MSMQ to Azure Service Bus migration
+    messaging:
+      source: msmq
+      target: azure-service-bus
+      reason: Azure Service Bus provides cloud-native messaging with high availability and scalability
+      configuration:
+        namespace: productcatalog-servicebus
+        queueName: orders
+        
+    # ASP.NET MVC to ASP.NET Core MVC migration
+    web:
+      source: aspnet-mvc-5
+      target: aspnetcore-mvc
+      reason: ASP.NET Core provides cross-platform support, better performance, and modern development experience
+      
+    # Session state migration
+    sessionState:
+      source: in-memory
+      target: azure-redis-cache
+      reason: Distributed cache required for containerized applications to maintain state across instances
+      
+    # Project format migration
+    projectFormat:
+      source: legacy-csproj
+      target: sdk-style-csproj
+      reason: SDK-style projects are simpler, support modern .NET features, and work better with containers
+
+# Modernization Strategy
+strategy:
+  approach: incremental
+  phases:
+    - name: Assessment
+      description: Analyze codebase and identify all legacy patterns
+      
+    - name: Foundation
+      description: Migrate to .NET 10 and SDK-style projects
+      
+    - name: Services
+      description: Migrate WCF to gRPC
+      
+    - name: Messaging
+      description: Migrate MSMQ to Azure Service Bus
+      
+    - name: Web
+      description: Migrate ASP.NET MVC to ASP.NET Core MVC
+      
+    - name: Containerization
+      description: Add Docker support and prepare for Azure Container Apps
+      
+    - name: Deployment
+      description: Deploy to Azure Container Apps
+
+# Dependencies and Packages
+packageMigrations:
+  # Remove old .NET Framework packages
+  remove:
+    - System.Web
+    - System.Web.Mvc
+    - System.ServiceModel (WCF)
+    - System.Messaging (MSMQ)
+    - Microsoft.Web.Infrastructure
+    - Microsoft.AspNet.WebPages
+    - Microsoft.AspNet.Razor
+    
+  # Add modern .NET packages
+  add:
+    - Microsoft.AspNetCore.Mvc
+    - Grpc.AspNetCore
+    - Azure.Messaging.ServiceBus
+    - Microsoft.Extensions.Caching.StackExchangeRedis
+    - Grpc.Tools
+    - Google.Protobuf
+    
+# Container Configuration
+containerization:
+  baseImage: mcr.microsoft.com/dotnet/aspnet:10.0
+  buildImage: mcr.microsoft.com/dotnet/sdk:10.0
+  exposedPorts:
+    - 8080
+    - 8081
+  healthCheck:
+    path: /health
+    interval: 30s
+    
+# Azure Resources Required
+azureResources:
+  - type: container-app
+    name: productcatalog-web
+    
+  - type: container-app
+    name: productcatalog-service
+    
+  - type: service-bus-namespace
+    name: productcatalog-servicebus
+    sku: Standard
+    
+  - type: redis-cache
+    name: productcatalog-cache
+    sku: Basic
+    
+# Testing Strategy
+testing:
+  approach: automated
+  types:
+    - unit-tests
+    - integration-tests
+    - container-tests
+  tools:
+    - xUnit
+    - TestContainers
+    - Azure.Messaging.ServiceBus.Tests
+
+# Compatibility Notes
+compatibility:
+  breakingChanges:
+    - Session state will require distributed cache
+    - WCF clients need to be regenerated as gRPC clients
+    - MSMQ queue paths become Service Bus queue names
+    - Web.config replaced with appsettings.json
+    - Global.asax replaced with Program.cs and Startup.cs
+    
+  mitigations:
+    - Implement adapter pattern for gradual migration
+    - Use feature flags for parallel running
+    - Maintain backward compatibility where possible
