@@ -1,6 +1,6 @@
 {
   "version": "1.0",
-  "generated_at": "2026-01-16T16:16:10.532415",
+  "generated_at": "2026-01-16T17:09:36.212966",
   "repository": "repo",
   "complexity_score": 4,
   "total_tasks": 12,
@@ -12,9 +12,9 @@
     "deploy"
   ],
   "detected_patterns": [
-    "classic_mvc",
     "msmq",
-    "wcf_service"
+    "wcf_service",
+    "classic_mvc"
   ],
   "tasks": [
     {
@@ -62,7 +62,7 @@
       "agent_hint": "Automated analysis - run detection tools",
       "template_id": "assess-repository",
       "started_at": null,
-      "completed_at": "2026-01-16T16:16:10.529134",
+      "completed_at": "2026-01-16T17:09:36.209637",
       "result": null,
       "branch": null,
       "pr_url": null

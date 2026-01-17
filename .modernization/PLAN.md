@@ -1,7 +1,7 @@
 # Migration Plan
 
 **Repository:** repo  
-**Generated:** 2026-01-16T16:16:10.532415  
+**Generated:** 2026-01-16T17:09:36.212966  
 **Complexity Score:** 4/10  
 
 ## Summary
