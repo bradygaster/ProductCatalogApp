@@ -1,6 +1,6 @@
 {
   "version": "1.0",
-  "generated_at": "2026-01-16T14:06:13.189280",
+  "generated_at": "2026-01-16T16:16:10.532415",
   "repository": "repo",
   "complexity_score": 4,
   "total_tasks": 12,
@@ -12,9 +12,9 @@
     "deploy"
   ],
   "detected_patterns": [
-    "wcf_service",
+    "classic_mvc",
     "msmq",
-    "classic_mvc"
+    "wcf_service"
   ],
   "tasks": [
     {
@@ -62,7 +62,7 @@
       "agent_hint": "Automated analysis - run detection tools",
       "template_id": "assess-repository",
       "started_at": null,
-      "completed_at": "2026-01-16T14:06:13.189209",
+      "completed_at": "2026-01-16T16:16:10.529134",
       "result": null,
       "branch": null,
       "pr_url": null
@@ -113,7 +113,10 @@
         "**/global.json"
       ],
       "files_to_create": [],
-      "depends_on": [],
+      "depends_on": [
+        "transform-003-migrate_msmq_to_servicebus",
+        "transform-004-migrate_wcf_to_grpc"
+      ],
       "blocks": [],
       "estimated_minutes": 45,
       "agent_hint": "Good for coding agents - systematic file updates",
@@ -264,7 +267,9 @@
         "infrastructure/service-bus.bicep"
       ],
       "depends_on": [],
-      "blocks": [],
+      "blocks": [
+        "transform-001-upgrade_dotnet"
+      ],
       "estimated_minutes": 90,
       "agent_hint": "Add Service Bus SDK, replace MessageQueue with ServiceBusClient",
       "template_id": "migrate-msmq-to-servicebus",
@@ -341,7 +346,9 @@
         "src/<ServiceName>.Grpc/Program.cs"
       ],
       "depends_on": [],
-      "blocks": [],
+      "blocks": [
+        "transform-001-upgrade_dotnet"
+      ],
       "estimated_minutes": 120,
       "agent_hint": "Multi-step task - create proto, generate code, migrate logic",
       "template_id": "migrate-wcf-to-grpc",
