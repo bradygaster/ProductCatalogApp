@@ -1,0 +1,82 @@
+name: ProductCatalogApp Modernization Playbook
+description: Migration preferences for upgrading ProductCatalogApp to .NET 10 and Azure Container Apps
+
+# Target platform configuration
+target:
+  framework: net10.0
+  runtime: linux-x64
+  compute: azure-container-apps
+  
+# Migration paths for legacy technologies
+migrations:
+  framework:
+    from: net481
+    to: net10.0
+    
+  web:
+    from: aspnet-mvc5
+    to: aspnetcore-mvc
+    description: Migrate ASP.NET MVC 5 to ASP.NET Core MVC
+    
+  services:
+    from: wcf
+    to: grpc
+    description: Convert WCF service to gRPC for modern service communication
+    
+  messaging:
+    from: msmq
+    to: azure-service-bus
+    description: Replace MSMQ with Azure Service Bus for reliable message queuing
+    
+# Azure services to be used
+azure:
+  services:
+    - name: azure-container-apps
+      purpose: Host modernized application containers
+      
+    - name: azure-service-bus
+      purpose: Replace MSMQ for order processing queue
+      configuration:
+        queue: product-catalog-orders
+        
+    - name: azure-container-registry
+      purpose: Store container images
+      
+# Application architecture changes
+architecture:
+  pattern: microservices
+  components:
+    - name: web-app
+      type: aspnetcore-mvc
+      deployment: azure-container-apps
+      
+    - name: product-service
+      type: grpc-service
+      deployment: azure-container-apps
+      
+    - name: order-processor
+      type: worker-service
+      deployment: azure-container-apps
+      description: Background service to process orders from Azure Service Bus
+      
+# Build and deployment
+build:
+  containerization: true
+  base-image: mcr.microsoft.com/dotnet/aspnet:10.0
+  sdk-image: mcr.microsoft.com/dotnet/sdk:10.0
+  
+deployment:
+  strategy: containerized
+  platform: azure-container-apps
+  
+# Dependencies that need updating
+dependencies:
+  remove:
+    - System.ServiceModel (WCF)
+    - System.Messaging (MSMQ)
+    - Microsoft.AspNet.Mvc (old MVC)
+    
+  add:
+    - Grpc.AspNetCore
+    - Azure.Messaging.ServiceBus
+    - Microsoft.AspNetCore.Mvc (Core)
