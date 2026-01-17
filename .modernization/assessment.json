@@ -1,0 +1,380 @@
+{
+  "version": "1.0",
+  "timestamp": "2026-01-17T00:45:08.674Z",
+  "repository": "bradygaster/ProductCatalogApp",
+  "branch": "modernize/assess",
+  "summary": {
+    "current_framework": ".NET Framework 4.8.1",
+    "target_framework": ".NET 10",
+    "target_compute": "Azure Container Apps",
+    "modernization_complexity": "Medium",
+    "estimated_effort": "Medium (2-4 weeks)"
+  },
+  "current_state": {
+    "framework": ".NET Framework 4.8.1",
+    "project_type": "ASP.NET MVC 5 Web Application + WCF Service Library",
+    "project_format": "Legacy .csproj (non-SDK style)",
+    "web_framework": "ASP.NET MVC 5.2.9",
+    "service_framework": "WCF (Windows Communication Foundation)",
+    "messaging": "MSMQ (System.Messaging)",
+    "session_management": "In-memory ASP.NET Session State",
+    "configuration": "Web.config / App.config"
+  },
+  "projects": [
+    {
+      "name": "ProductCatalog",
+      "path": "ProductCatalog/ProductCatalog.csproj",
+      "type": "ASP.NET MVC 5 Web Application",
+      "current_framework": ".NET Framework 4.8.1",
+      "target_framework": ".NET 10",
+      "issues": [
+        {
+          "category": "Web Framework",
+          "severity": "High",
+          "description": "Uses ASP.NET MVC 5, needs migration to ASP.NET Core MVC",
+          "impact": "Complete rewrite of project file, startup configuration, and middleware pipeline"
+        },
+        {
+          "category": "WCF Client",
+          "severity": "High",
+          "description": "Uses WCF service reference (ProductServiceReference) to communicate with backend",
+          "impact": "Must migrate to gRPC client or HTTP client"
+        },
+        {
+          "category": "MSMQ",
+          "severity": "High",
+          "description": "OrderQueueService uses System.Messaging (MSMQ) for order processing",
+          "impact": "Replace with Azure Service Bus SDK",
+          "affected_files": ["Services/OrderQueueService.cs"]
+        },
+        {
+          "category": "Session State",
+          "severity": "Medium",
+          "description": "Uses in-memory Session state for shopping cart",
+          "impact": "Consider distributed cache (Redis) for stateless container deployment",
+          "affected_files": ["Controllers/HomeController.cs"]
+        },
+        {
+          "category": "Configuration",
+          "severity": "Medium",
+          "description": "Uses Web.config for configuration",
+          "impact": "Migrate to appsettings.json and IConfiguration",
+          "affected_files": ["Web.config"]
+        },
+        {
+          "category": "Project Format",
+          "severity": "Medium",
+          "description": "Uses legacy .csproj format",
+          "impact": "Convert to SDK-style project file",
+          "affected_files": ["ProductCatalog.csproj"]
+        },
+        {
+          "category": "Dependencies",
+          "severity": "Low",
+          "description": "Uses packages.config for NuGet packages",
+          "impact": "Convert to PackageReference format",
+          "affected_files": ["packages.config"]
+        }
+      ]
+    },
+    {
+      "name": "ProductServiceLibrary",
+      "path": "ProductServiceLibrary/ProductServiceLibrary.csproj",
+      "type": "WCF Service Library",
+      "current_framework": ".NET Framework 4.8.1",
+      "target_framework": ".NET 10",
+      "issues": [
+        {
+          "category": "WCF Service",
+          "severity": "High",
+          "description": "Entire project is WCF-based with ServiceContract and OperationContract attributes",
+          "impact": "Migrate to gRPC service with .proto definitions",
+          "affected_files": [
+            "IProductService.cs",
+            "ProductService.cs"
+          ]
+        },
+        {
+          "category": "Service Hosting",
+          "severity": "High",
+          "description": "WCF service requires different hosting model",
+          "impact": "Create ASP.NET Core gRPC service project",
+          "affected_files": ["App.config"]
+        },
+        {
+          "category": "Project Format",
+          "severity": "Medium",
+          "description": "Uses legacy WCF project format",
+          "impact": "Convert to SDK-style project targeting .NET 10",
+          "affected_files": ["ProductServiceLibrary.csproj"]
+        },
+        {
+          "category": "Data Access",
+          "severity": "Low",
+          "description": "In-memory repository pattern",
+          "impact": "No immediate change needed, but consider adding EF Core for database persistence",
+          "affected_files": ["ProductRepository.cs"]
+        }
+      ]
+    }
+  ],
+  "legacy_patterns": {
+    "wcf": {
+      "found": true,
+      "locations": [
+        "ProductServiceLibrary/IProductService.cs",
+        "ProductServiceLibrary/ProductService.cs",
+        "ProductCatalog/Connected Services/ProductServiceReference/"
+      ],
+      "migration_path": "gRPC",
+      "effort": "High"
+    },
+    "msmq": {
+      "found": true,
+      "locations": [
+        "ProductCatalog/Services/OrderQueueService.cs",
+        "ProductCatalog/ProductCatalog.csproj (System.Messaging reference)"
+      ],
+      "migration_path": "Azure Service Bus",
+      "effort": "Medium"
+    },
+    "aspnet_mvc": {
+      "found": true,
+      "version": "5.2.9",
+      "migration_path": "ASP.NET Core MVC",
+      "effort": "High",
+      "notes": "Views, controllers, and routing need updates"
+    },
+    "system_web": {
+      "found": true,
+      "usage": "Session state, HttpContext dependencies",
+      "migration_path": "ASP.NET Core abstractions",
+      "effort": "Medium"
+    },
+    "web_config": {
+      "found": true,
+      "locations": [
+        "ProductCatalog/Web.config",
+        "ProductServiceLibrary/App.config"
+      ],
+      "migration_path": "appsettings.json",
+      "effort": "Low"
+    }
+  },
+  "modernization_steps": [
+    {
+      "order": 1,
+      "phase": "Project Structure",
+      "task": "Create new .NET 10 SDK-style projects",
+      "details": [
+        "Create new ASP.NET Core MVC project for ProductCatalog",
+        "Create new ASP.NET Core gRPC service project for ProductService",
+        "Set up proper folder structure for containerization"
+      ]
+    },
+    {
+      "order": 2,
+      "phase": "Service Layer Migration",
+      "task": "Migrate WCF service to gRPC",
+      "details": [
+        "Define .proto file for Product service",
+        "Implement gRPC service methods",
+        "Add gRPC service to ASP.NET Core host",
+        "Test service endpoints"
+      ]
+    },
+    {
+      "order": 3,
+      "phase": "Web Application Migration",
+      "task": "Migrate ASP.NET MVC to ASP.NET Core MVC",
+      "details": [
+        "Port controllers to ASP.NET Core",
+        "Update views with ASP.NET Core tag helpers",
+        "Configure routing and middleware",
+        "Replace WCF client with gRPC client"
+      ]
+    },
+    {
+      "order": 4,
+      "phase": "Messaging Migration",
+      "task": "Replace MSMQ with Azure Service Bus",
+      "details": [
+        "Add Azure.Messaging.ServiceBus NuGet package",
+        "Create IMessageQueueService interface",
+        "Implement Azure Service Bus sender/receiver",
+        "Update configuration for connection strings",
+        "Add managed identity support for production"
+      ]
+    },
+    {
+      "order": 5,
+      "phase": "State Management",
+      "task": "Implement distributed session state",
+      "details": [
+        "Add Redis cache dependency",
+        "Configure distributed session state",
+        "Update session access patterns",
+        "Consider moving to stateless design with client-side storage"
+      ]
+    },
+    {
+      "order": 6,
+      "phase": "Configuration",
+      "task": "Migrate configuration system",
+      "details": [
+        "Create appsettings.json and appsettings.Development.json",
+        "Use IConfiguration and strongly-typed options",
+        "Configure Azure Key Vault for secrets (production)",
+        "Set up environment-specific configuration"
+      ]
+    },
+    {
+      "order": 7,
+      "phase": "Containerization",
+      "task": "Add Docker support",
+      "details": [
+        "Create Dockerfile for web application",
+        "Create Dockerfile for gRPC service",
+        "Create docker-compose.yml for local development",
+        "Optimize images for size and security"
+      ]
+    },
+    {
+      "order": 8,
+      "phase": "Azure Container Apps",
+      "task": "Prepare for Container Apps deployment",
+      "details": [
+        "Create Container App YAML manifests",
+        "Configure ingress and scaling rules",
+        "Set up Service Bus connection",
+        "Configure managed identity",
+        "Create deployment pipeline"
+      ]
+    }
+  ],
+  "dependencies": {
+    "current": [
+      {
+        "name": "Microsoft.AspNet.Mvc",
+        "version": "5.2.9",
+        "target": "N/A (part of ASP.NET Core)",
+        "action": "Remove, use ASP.NET Core MVC"
+      },
+      {
+        "name": "System.ServiceModel",
+        "version": "Framework-included",
+        "target": "Grpc.AspNetCore",
+        "action": "Replace with gRPC"
+      },
+      {
+        "name": "System.Messaging",
+        "version": "Framework-included",
+        "target": "Azure.Messaging.ServiceBus 7.x",
+        "action": "Replace with Service Bus SDK"
+      },
+      {
+        "name": "Newtonsoft.Json",
+        "version": "13.0.3",
+        "target": "System.Text.Json (built-in) or keep Newtonsoft.Json",
+        "action": "Evaluate need, prefer System.Text.Json"
+      }
+    ],
+    "new": [
+      {
+        "name": "Grpc.AspNetCore",
+        "reason": "gRPC service and client support"
+      },
+      {
+        "name": "Azure.Messaging.ServiceBus",
+        "reason": "Azure Service Bus integration"
+      },
+      {
+        "name": "Azure.Identity",
+        "reason": "Managed identity support for Azure services"
+      },
+      {
+        "name": "Microsoft.Extensions.Caching.StackExchangeRedis",
+        "reason": "Distributed cache for session state",
+        "optional": true
+      }
+    ]
+  },
+  "azure_services_required": [
+    {
+      "service": "Azure Container Apps",
+      "purpose": "Host web application and gRPC service",
+      "configuration": {
+        "ingress": "External (HTTPS)",
+        "scaling": "Auto-scale based on HTTP requests",
+        "replicas": "1-10"
+      }
+    },
+    {
+      "service": "Azure Service Bus",
+      "purpose": "Replace MSMQ for order message processing",
+      "configuration": {
+        "sku": "Standard or Premium",
+        "queues": ["product-catalog-orders"],
+        "features": ["Dead-letter queue", "Sessions"]
+      }
+    },
+    {
+      "service": "Azure Container Registry",
+      "purpose": "Store container images",
+      "configuration": {
+        "sku": "Basic or Standard"
+      }
+    },
+    {
+      "service": "Azure Redis Cache",
+      "purpose": "Distributed session state (optional)",
+      "configuration": {
+        "sku": "Basic or Standard",
+        "optional": true
+      }
+    }
+  ],
+  "risks_and_considerations": [
+    {
+      "risk": "Session state in containers",
+      "severity": "Medium",
+      "mitigation": "Implement distributed cache or redesign to be stateless"
+    },
+    {
+      "risk": "WCF to gRPC breaking changes",
+      "severity": "High",
+      "mitigation": "Consider running both services in parallel during migration, use feature flags"
+    },
+    {
+      "risk": "MSMQ to Service Bus message format differences",
+      "severity": "Medium",
+      "mitigation": "Ensure message serialization compatibility, test thoroughly"
+    },
+    {
+      "risk": "View rendering differences in ASP.NET Core",
+      "severity": "Low",
+      "mitigation": "Test all views, update tag helpers and HTML helpers"
+    },
+    {
+      "risk": "Cold start performance in Container Apps",
+      "severity": "Low",
+      "mitigation": "Configure minimum replicas, use health checks"
+    }
+  ],
+  "testing_strategy": {
+    "unit_tests": "Add unit tests for business logic (currently none exist)",
+    "integration_tests": "Test gRPC service, Service Bus integration",
+    "migration_tests": "Verify feature parity between old and new versions",
+    "performance_tests": "Load test Container Apps deployment"
+  },
+  "recommendations": [
+    "Start with service layer (WCF to gRPC) as it's the most critical",
+    "Implement Service Bus early in development for testing",
+    "Use feature flags to gradually migrate features",
+    "Set up CI/CD pipeline early for continuous deployment",
+    "Consider adding authentication/authorization for production",
+    "Add application insights for monitoring and diagnostics",
+    "Implement health checks for Container Apps",
+    "Use managed identity to avoid storing connection strings in code"
+  ]
+}

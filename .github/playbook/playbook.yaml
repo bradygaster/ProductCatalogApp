@@ -1,0 +1,67 @@
+# Modernization Playbook for ProductCatalogApp
+# This file defines the migration preferences and targets for modernizing this application
+
+version: "1.0"
+
+# Target framework and platform
+target:
+  framework: "net10.0"
+  compute: "Azure Container Apps"
+  
+# Migration mappings for legacy technologies
+migrations:
+  # WCF services will be migrated to gRPC
+  wcf:
+    target: "gRPC"
+    reason: "gRPC is the modern, cross-platform RPC framework recommended by Microsoft"
+  
+  # MSMQ will be migrated to Azure Service Bus
+  messaging:
+    source: "MSMQ"
+    target: "Azure Service Bus"
+    reason: "Azure Service Bus provides cloud-native messaging with better scalability and reliability"
+  
+  # ASP.NET MVC will be migrated to ASP.NET Core MVC
+  web:
+    source: "ASP.NET MVC 5"
+    target: "ASP.NET Core MVC"
+    reason: "ASP.NET Core is cross-platform and optimized for cloud deployment"
+  
+  # Project format modernization
+  project:
+    source: "Legacy .csproj"
+    target: "SDK-style .csproj"
+    reason: "SDK-style projects are simpler and support modern .NET features"
+
+# Deployment configuration
+deployment:
+  containerization:
+    enabled: true
+    platform: "Docker"
+    
+  azure:
+    resource: "Azure Container Apps"
+    features:
+      - "Auto-scaling"
+      - "HTTPS ingress"
+      - "Managed identity"
+      - "Service Bus integration"
+
+# Code modernization preferences
+code_quality:
+  nullable_reference_types: true
+  async_await_patterns: true
+  dependency_injection: true
+  configuration_system: "IConfiguration (appsettings.json)"
+
+# Dependencies modernization
+dependencies:
+  - name: "Entity Framework"
+    current: "N/A"
+    target: "EF Core 9"
+    status: "Not currently used, available if needed"
+  
+  - name: "Authentication"
+    current: "None"
+    target: "Microsoft.Identity"
+    status: "Add if needed"
