@@ -46,7 +46,7 @@ public class ProductServiceClient : IProductServiceClient
             var json = await response.Content.ReadAsStringAsync();
             return JsonSerializer.Deserialize<Product>(json, _jsonOptions);
         }
-        catch
+        catch (HttpRequestException)
         {
             return null;
         }

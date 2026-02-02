@@ -10,7 +10,7 @@ public interface IOrderQueueService
     Task<Order?> ReceiveOrderAsync(TimeSpan timeout);
 }
 
-public class OrderQueueService : IOrderQueueService
+public class OrderQueueService : IOrderQueueService, IAsyncDisposable
 {
     private readonly string _connectionString;
     private readonly string _queueName;
@@ -76,5 +76,11 @@ public class OrderQueueService : IOrderQueueService
                 await receiver.DisposeAsync();
             }
         }
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        await _sender.DisposeAsync();
+        await _client.DisposeAsync();
     }
 }
