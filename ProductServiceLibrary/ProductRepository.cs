@@ -1,35 +1,31 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
+namespace ProductServiceLibrary;
 
-namespace ProductServiceLibrary
+public class ProductRepository
 {
-    public class ProductRepository
+    private static List<Product> _products = null!;
+    private static List<Category> _categories = null!;
+    private static int _nextProductId;
+    private static readonly object _lock = new();
+
+    static ProductRepository()
     {
-        private static List<Product> _products;
-        private static List<Category> _categories;
-        private static int _nextProductId;
-        private static readonly object _lock = new object();
+        InitializeData();
+    }
 
-        static ProductRepository()
+    private static void InitializeData()
+    {
+        _categories = new List<Category>
         {
-            InitializeData();
-        }
+            new Category { Id = 1, Name = "Electronics", Description = "Electronic devices and accessories" },
+            new Category { Id = 2, Name = "Clothing", Description = "Apparel and fashion items" },
+            new Category { Id = 3, Name = "Books", Description = "Books and publications" },
+            new Category { Id = 4, Name = "Home & Garden", Description = "Home improvement and garden supplies" },
+            new Category { Id = 5, Name = "Sports & Outdoors", Description = "Sports equipment and outdoor gear" },
+            new Category { Id = 6, Name = "Toys & Games", Description = "Toys, games, and puzzles" },
+            new Category { Id = 7, Name = "Food & Beverage", Description = "Food items and beverages" }
+        };
 
-        private static void InitializeData()
-        {
-            _categories = new List<Category>
-            {
-                new Category { Id = 1, Name = "Electronics", Description = "Electronic devices and accessories" },
-                new Category { Id = 2, Name = "Clothing", Description = "Apparel and fashion items" },
-                new Category { Id = 3, Name = "Books", Description = "Books and publications" },
-                new Category { Id = 4, Name = "Home & Garden", Description = "Home improvement and garden supplies" },
-                new Category { Id = 5, Name = "Sports & Outdoors", Description = "Sports equipment and outdoor gear" },
-                new Category { Id = 6, Name = "Toys & Games", Description = "Toys, games, and puzzles" },
-                new Category { Id = 7, Name = "Food & Beverage", Description = "Food items and beverages" }
-            };
-
-            _products = new List<Product>
+        _products = new List<Product>
             {
                 new Product
                 {
@@ -352,7 +348,7 @@ namespace ProductServiceLibrary
             }
         }
 
-        public Product GetProductById(int productId)
+        public Product? GetProductById(int productId)
         {
             lock (_lock)
             {
@@ -463,4 +459,3 @@ namespace ProductServiceLibrary
             }
         }
     }
-}

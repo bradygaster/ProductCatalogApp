@@ -1,36 +1,14 @@
-﻿using System.Collections.Generic;
-using System.ServiceModel;
+﻿namespace ProductServiceLibrary;
 
-namespace ProductServiceLibrary
+public interface IProductService
 {
-    [ServiceContract]
-    public interface IProductService
-    {
-        [OperationContract]
-        List<Product> GetAllProducts();
-
-        [OperationContract]
-        Product GetProductById(int productId);
-
-        [OperationContract]
-        List<Product> GetProductsByCategory(string category);
-
-        [OperationContract]
-        List<Product> SearchProducts(string searchTerm);
-
-        [OperationContract]
-        List<Category> GetCategories();
-
-        [OperationContract]
-        Product CreateProduct(Product product);
-
-        [OperationContract]
-        bool UpdateProduct(Product product);
-
-        [OperationContract]
-        bool DeleteProduct(int productId);
-
-        [OperationContract]
-        List<Product> GetProductsByPriceRange(decimal minPrice, decimal maxPrice);
-    }
+    List<Product> GetAllProducts();
+    Product? GetProductById(int productId);
+    List<Product> GetProductsByCategory(string category);
+    List<Product> SearchProducts(string searchTerm);
+    List<Category> GetCategories();
+    Product CreateProduct(Product product);
+    bool UpdateProduct(Product product);
+    bool DeleteProduct(int productId);
+    List<Product> GetProductsByPriceRange(decimal minPrice, decimal maxPrice);
 }
