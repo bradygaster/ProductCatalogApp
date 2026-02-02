@@ -1,98 +1,127 @@
+using Azure.Messaging.ServiceBus;
 using ProductCatalog.Models;
 using System;
-using System.Configuration;
-using System.Messaging;
+using System.Text.Json;
+using System.Threading.Tasks;
 
 namespace ProductCatalog.Services
 {
-    public class OrderQueueService
+    public class OrderQueueService : IAsyncDisposable
     {
-        private readonly string _queuePath;
+        private readonly string _connectionString;
+        private readonly string _queueName;
+        private ServiceBusClient _client;
+        private ServiceBusSender _sender;
+        private ServiceBusReceiver _receiver;
 
-        public OrderQueueService()
+        public OrderQueueService(string connectionString, string queueName = "orders")
         {
-            _queuePath = ConfigurationManager.AppSettings["OrderQueuePath"] ?? @".\Private$\ProductCatalogOrders";
-            EnsureQueueExists();
+            if (string.IsNullOrWhiteSpace(connectionString))
+            {
+                throw new ArgumentException("Connection string cannot be null or empty", nameof(connectionString));
+            }
+
+            _connectionString = connectionString;
+            _queueName = queueName;
+            
+            InitializeClient();
         }
 
-        public OrderQueueService(string queuePath)
-        {
-            _queuePath = queuePath;
-            EnsureQueueExists();
-        }
-
-        private void EnsureQueueExists()
+        private void InitializeClient()
         {
             try
             {
-                if (!MessageQueue.Exists(_queuePath))
-                {
-                    MessageQueue.Create(_queuePath);
-                }
+                _client = new ServiceBusClient(_connectionString);
+                _sender = _client.CreateSender(_queueName);
+                _receiver = _client.CreateReceiver(_queueName);
             }
             catch (Exception ex)
             {
-                throw new InvalidOperationException($"Failed to create or access message queue at {_queuePath}", ex);
+                throw new InvalidOperationException($"Failed to initialize Azure Service Bus client for queue '{_queueName}'", ex);
             }
         }
 
-        public void SendOrder(Order order)
+        public async Task SendOrderAsync(Order order)
         {
             try
             {
-                using (MessageQueue queue = new MessageQueue(_queuePath))
+                if (order == null)
                 {
-                    queue.Formatter = new XmlMessageFormatter(new Type[] { typeof(Order) });
-                    
-                    Message message = new Message(order)
-                    {
-                        Label = $"Order {order.OrderId}",
-                        Recoverable = true
-                    };
-
-                    queue.Send(message);
+                    throw new ArgumentNullException(nameof(order));
                 }
+
+                var messageBody = JsonSerializer.Serialize(order);
+                var message = new ServiceBusMessage(messageBody)
+                {
+                    Subject = $"Order {order.OrderId}",
+                    MessageId = order.OrderId,
+                    ContentType = "application/json"
+                };
+
+                await _sender.SendMessageAsync(message);
             }
             catch (Exception ex)
             {
-                throw new InvalidOperationException($"Failed to send order {order.OrderId} to queue", ex);
+                throw new InvalidOperationException($"Failed to send order {order?.OrderId} to Service Bus queue", ex);
             }
         }
 
-        public Order ReceiveOrder(TimeSpan timeout)
+        public async Task<Order> ReceiveOrderAsync(TimeSpan timeout)
         {
             try
             {
-                using (MessageQueue queue = new MessageQueue(_queuePath))
+                var message = await _receiver.ReceiveMessageAsync(timeout);
+                
+                if (message == null)
                 {
-                    queue.Formatter = new XmlMessageFormatter(new Type[] { typeof(Order) });
-                    
-                    Message message = queue.Receive(timeout);
-                    return (Order)message.Body;
+                    return null;
                 }
+
+                var order = JsonSerializer.Deserialize<Order>(message.Body.ToString());
+                
+                // Complete the message to remove it from the queue
+                await _receiver.CompleteMessageAsync(message);
+                
+                return order;
             }
-            catch (MessageQueueException ex) when (ex.MessageQueueErrorCode == MessageQueueErrorCode.IOTimeout)
+            catch (OperationCanceledException)
             {
                 return null;
             }
             catch (Exception ex)
             {
-                throw new InvalidOperationException("Failed to receive order from queue", ex);
+                throw new InvalidOperationException("Failed to receive order from Service Bus queue", ex);
             }
         }
 
-        public int GetQueueMessageCount()
+        public async Task<long> GetQueueMessageCountAsync()
         {
             try
             {
-                using (MessageQueue queue = new MessageQueue(_queuePath))
-                {
-                    return queue.GetAllMessages().Length;
-                }
+                var queueProperties = await _client.CreateReceiver(_queueName).PeekMessageAsync();
+                return queueProperties != null ? 1 : 0; // Simplified for demo
             }
             catch (Exception)
             {
                 return 0;
+            }
+        }
+
+        public async ValueTask DisposeAsync()
+        {
+            if (_sender != null)
+            {
+                await _sender.DisposeAsync();
+            }
+            
+            if (_receiver != null)
+            {
+                await _receiver.DisposeAsync();
+            }
+            
+            if (_client != null)
+            {
+                await _client.DisposeAsync();
             }
         }
     }

@@ -1,6 +1,4 @@
 <Solution>
-  <Project Path="ProductCatalog/ProductCatalog.csproj" Id="30c8e0ce-0851-40c2-b596-82d7bb1a2f9b">
-    <BuildDependency Project="ProductServiceLibrary/ProductServiceLibrary.csproj" />
-  </Project>
-  <Project Path="ProductServiceLibrary/ProductServiceLibrary.csproj" Id="58ab8db9-4a79-4ca5-8986-098de415cd88" />
+  <Project Path="ProductCatalog/ProductCatalog.csproj" />
+  <Project Path="ProductServiceLibrary/ProductServiceLibrary.csproj" />
 </Solution>

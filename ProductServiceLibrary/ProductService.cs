@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.ServiceModel;
 
 namespace ProductServiceLibrary
 {
@@ -21,7 +20,7 @@ namespace ProductServiceLibrary
             }
             catch (Exception ex)
             {
-                throw new FaultException($"Error retrieving all products: {ex.Message}");
+                throw new InvalidOperationException($"Error retrieving all products: {ex.Message}", ex);
             }
         }
 
@@ -32,17 +31,17 @@ namespace ProductServiceLibrary
                 var product = _repository.GetProductById(productId);
                 if (product == null)
                 {
-                    throw new FaultException($"Product with ID {productId} not found");
+                    throw new InvalidOperationException($"Product with ID {productId} not found");
                 }
                 return product;
             }
-            catch (FaultException)
+            catch (InvalidOperationException)
             {
                 throw;
             }
             catch (Exception ex)
             {
-                throw new FaultException($"Error retrieving product: {ex.Message}");
+                throw new InvalidOperationException($"Error retrieving product: {ex.Message}", ex);
             }
         }
 
@@ -52,17 +51,17 @@ namespace ProductServiceLibrary
             {
                 if (string.IsNullOrWhiteSpace(category))
                 {
-                    throw new FaultException("Category parameter cannot be null or empty");
+                    throw new ArgumentException("Category parameter cannot be null or empty", nameof(category));
                 }
                 return _repository.GetProductsByCategory(category);
             }
-            catch (FaultException)
+            catch (ArgumentException)
             {
                 throw;
             }
             catch (Exception ex)
             {
-                throw new FaultException($"Error retrieving products by category: {ex.Message}");
+                throw new InvalidOperationException($"Error retrieving products by category: {ex.Message}", ex);
             }
         }
 
@@ -74,7 +73,7 @@ namespace ProductServiceLibrary
             }
             catch (Exception ex)
             {
-                throw new FaultException($"Error searching products: {ex.Message}");
+                throw new InvalidOperationException($"Error searching products: {ex.Message}", ex);
             }
         }
 
@@ -86,7 +85,7 @@ namespace ProductServiceLibrary
             }
             catch (Exception ex)
             {
-                throw new FaultException($"Error retrieving categories: {ex.Message}");
+                throw new InvalidOperationException($"Error retrieving categories: {ex.Message}", ex);
             }
         }
 
@@ -96,28 +95,28 @@ namespace ProductServiceLibrary
             {
                 if (product == null)
                 {
-                    throw new FaultException("Product parameter cannot be null");
+                    throw new ArgumentNullException(nameof(product), "Product parameter cannot be null");
                 }
 
                 if (string.IsNullOrWhiteSpace(product.Name))
                 {
-                    throw new FaultException("Product name is required");
+                    throw new ArgumentException("Product name is required", nameof(product));
                 }
 
                 if (product.Price < 0)
                 {
-                    throw new FaultException("Product price must be non-negative");
+                    throw new ArgumentException("Product price must be non-negative", nameof(product));
                 }
 
                 return _repository.CreateProduct(product);
             }
-            catch (FaultException)
+            catch (ArgumentException)
             {
                 throw;
             }
             catch (Exception ex)
             {
-                throw new FaultException($"Error creating product: {ex.Message}");
+                throw new InvalidOperationException($"Error creating product: {ex.Message}", ex);
             }
         }
 
@@ -127,34 +126,38 @@ namespace ProductServiceLibrary
             {
                 if (product == null)
                 {
-                    throw new FaultException("Product parameter cannot be null");
+                    throw new ArgumentNullException(nameof(product), "Product parameter cannot be null");
                 }
 
                 if (string.IsNullOrWhiteSpace(product.Name))
                 {
-                    throw new FaultException("Product name is required");
+                    throw new ArgumentException("Product name is required", nameof(product));
                 }
 
                 if (product.Price < 0)
                 {
-                    throw new FaultException("Product price must be non-negative");
+                    throw new ArgumentException("Product price must be non-negative", nameof(product));
                 }
 
                 bool result = _repository.UpdateProduct(product);
                 if (!result)
                 {
-                    throw new FaultException($"Product with ID {product.Id} not found");
+                    throw new InvalidOperationException($"Product with ID {product.Id} not found");
                 }
 
                 return result;
             }
-            catch (FaultException)
+            catch (ArgumentException)
+            {
+                throw;
+            }
+            catch (InvalidOperationException)
             {
                 throw;
             }
             catch (Exception ex)
             {
-                throw new FaultException($"Error updating product: {ex.Message}");
+                throw new InvalidOperationException($"Error updating product: {ex.Message}", ex);
             }
         }
 
@@ -165,17 +168,17 @@ namespace ProductServiceLibrary
                 bool result = _repository.DeleteProduct(productId);
                 if (!result)
                 {
-                    throw new FaultException($"Product with ID {productId} not found");
+                    throw new InvalidOperationException($"Product with ID {productId} not found");
                 }
                 return result;
             }
-            catch (FaultException)
+            catch (InvalidOperationException)
             {
                 throw;
             }
             catch (Exception ex)
             {
-                throw new FaultException($"Error deleting product: {ex.Message}");
+                throw new InvalidOperationException($"Error deleting product: {ex.Message}", ex);
             }
         }
 
@@ -185,23 +188,23 @@ namespace ProductServiceLibrary
             {
                 if (minPrice < 0 || maxPrice < 0)
                 {
-                    throw new FaultException("Price range values must be non-negative");
+                    throw new ArgumentException("Price range values must be non-negative");
                 }
 
                 if (minPrice > maxPrice)
                 {
-                    throw new FaultException("Minimum price cannot be greater than maximum price");
+                    throw new ArgumentException("Minimum price cannot be greater than maximum price");
                 }
 
                 return _repository.GetProductsByPriceRange(minPrice, maxPrice);
             }
-            catch (FaultException)
+            catch (ArgumentException)
             {
                 throw;
             }
             catch (Exception ex)
             {
-                throw new FaultException($"Error retrieving products by price range: {ex.Message}");
+                throw new InvalidOperationException($"Error retrieving products by price range: {ex.Message}", ex);
             }
         }
     }

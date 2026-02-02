@@ -1,5 +1,4 @@
-using System;
-using ProductCatalog.ProductServiceReference;
+using ProductServiceLibrary;
 
 namespace ProductCatalog.Models
 {
@@ -8,12 +7,6 @@ namespace ProductCatalog.Models
         public Product Product { get; set; }
         public int Quantity { get; set; }
 
-        public decimal Subtotal
-        {
-            get
-            {
-                return Product != null ? Product.Price * Quantity : 0;
-            }
-        }
+        public decimal Subtotal => Product.Price * Quantity;
     }
 }
