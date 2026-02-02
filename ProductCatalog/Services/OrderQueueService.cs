@@ -49,7 +49,7 @@ public class OrderQueueService
                 return null;
             }
 
-            var order = JsonSerializer.Deserialize<Order>(message.Body.ToString());
+            var order = JsonSerializer.Deserialize<Order>(message.Body);
             
             // Complete the message to remove it from the queue
             await receiver.CompleteMessageAsync(message);
@@ -59,20 +59,6 @@ public class OrderQueueService
         catch (Exception ex)
         {
             throw new InvalidOperationException("Failed to receive order from queue", ex);
-        }
-    }
-
-    public async Task<int> GetQueueMessageCountAsync()
-    {
-        try
-        {
-            // Note: Getting queue message count from Service Bus requires management library
-            // For now, we'll return 0. In production, use Azure.Messaging.ServiceBus.Administration
-            return 0;
-        }
-        catch (Exception)
-        {
-            return 0;
         }
     }
 }
