@@ -10,9 +10,9 @@ public class CategoriesController : ControllerBase
 {
     private readonly ProductRepository _repository;
 
-    public CategoriesController()
+    public CategoriesController(ProductRepository repository)
     {
-        _repository = new ProductRepository();
+        _repository = repository;
     }
 
     [HttpGet]
