@@ -1,17 +1,8 @@
-﻿using System.Runtime.Serialization;
+﻿namespace ProductServiceLibrary;
 
-namespace ProductServiceLibrary
+public class Category
 {
-    [DataContract]
-    public class Category
-    {
-        [DataMember]
-        public int Id { get; set; }
-
-        [DataMember]
-        public string Name { get; set; }
-
-        [DataMember]
-        public string Description { get; set; }
-    }
+    public int Id { get; set; }
+    public string Name { get; set; } = string.Empty;
+    public string Description { get; set; } = string.Empty;
 }

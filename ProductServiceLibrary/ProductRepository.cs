@@ -1,13 +1,9 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
+namespace ProductServiceLibrary;
 
-namespace ProductServiceLibrary
-{
-    public class ProductRepository
+public class ProductRepository
     {
-        private static List<Product> _products;
-        private static List<Category> _categories;
+        private static List<Product> _products = null!;
+        private static List<Category> _categories = null!;
         private static int _nextProductId;
         private static readonly object _lock = new object();
 
@@ -352,7 +348,7 @@ namespace ProductServiceLibrary
             }
         }
 
-        public Product GetProductById(int productId)
+        public Product? GetProductById(int productId)
         {
             lock (_lock)
             {
@@ -463,4 +459,3 @@ namespace ProductServiceLibrary
             }
         }
     }
-}

@@ -1,42 +1,16 @@
-﻿using System;
-using System.Runtime.Serialization;
+﻿namespace ProductServiceLibrary;
 
-namespace ProductServiceLibrary
+public class Product
 {
-    [DataContract]
-    public class Product
-    {
-        [DataMember]
-        public int Id { get; set; }
-
-        [DataMember]
-        public string Name { get; set; }
-
-        [DataMember]
-        public string Description { get; set; }
-
-        [DataMember]
-        public decimal Price { get; set; }
-
-        [DataMember]
-        public string Category { get; set; }
-
-        [DataMember]
-        public string SKU { get; set; }
-
-        [DataMember]
-        public int StockQuantity { get; set; }
-
-        [DataMember]
-        public string ImageUrl { get; set; }
-
-        [DataMember]
-        public bool IsActive { get; set; }
-
-        [DataMember]
-        public DateTime CreatedDate { get; set; }
-
-        [DataMember]
-        public DateTime? LastModifiedDate { get; set; }
-    }
+    public int Id { get; set; }
+    public string Name { get; set; } = string.Empty;
+    public string Description { get; set; } = string.Empty;
+    public decimal Price { get; set; }
+    public string Category { get; set; } = string.Empty;
+    public string SKU { get; set; } = string.Empty;
+    public int StockQuantity { get; set; }
+    public string ImageUrl { get; set; } = string.Empty;
+    public bool IsActive { get; set; }
+    public DateTime CreatedDate { get; set; }
+    public DateTime? LastModifiedDate { get; set; }
 }
