@@ -1,19 +1,15 @@
-using System;
-using ProductCatalog.ProductServiceReference;
+namespace ProductCatalog.Models;
 
-namespace ProductCatalog.Models
+public class CartItem
 {
-    public class CartItem
-    {
-        public Product Product { get; set; }
-        public int Quantity { get; set; }
+    public Product? Product { get; set; }
+    public int Quantity { get; set; }
 
-        public decimal Subtotal
+    public decimal Subtotal
+    {
+        get
         {
-            get
-            {
-                return Product != null ? Product.Price * Quantity : 0;
-            }
+            return Product != null ? Product.Price * Quantity : 0;
         }
     }
 }
