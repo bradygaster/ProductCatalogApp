@@ -1,98 +1,79 @@
+using Azure.Messaging.ServiceBus;
 using ProductCatalog.Models;
-using System;
-using System.Configuration;
-using System.Messaging;
+using System.Text.Json;
 
-namespace ProductCatalog.Services
+namespace ProductCatalog.Services;
+
+public interface IOrderQueueService
 {
-    public class OrderQueueService
+    Task SendOrderAsync(Order order);
+    Task<Order?> ReceiveOrderAsync(TimeSpan timeout);
+}
+
+public class OrderQueueService : IOrderQueueService
+{
+    private readonly string _connectionString;
+    private readonly string _queueName;
+    private readonly ServiceBusClient _client;
+    private readonly ServiceBusSender _sender;
+
+    public OrderQueueService(IConfiguration configuration)
     {
-        private readonly string _queuePath;
+        _connectionString = configuration["ServiceBusConnectionString"] ?? throw new InvalidOperationException("ServiceBusConnectionString not configured");
+        _queueName = configuration["OrderQueueName"] ?? "productcatalogorders";
+        
+        _client = new ServiceBusClient(_connectionString);
+        _sender = _client.CreateSender(_queueName);
+    }
 
-        public OrderQueueService()
+    public async Task SendOrderAsync(Order order)
+    {
+        try
         {
-            _queuePath = ConfigurationManager.AppSettings["OrderQueuePath"] ?? @".\Private$\ProductCatalogOrders";
-            EnsureQueueExists();
+            var json = JsonSerializer.Serialize(order);
+            var message = new ServiceBusMessage(json)
+            {
+                Subject = $"Order {order.OrderId}",
+                ContentType = "application/json"
+            };
+
+            await _sender.SendMessageAsync(message);
         }
-
-        public OrderQueueService(string queuePath)
+        catch (Exception ex)
         {
-            _queuePath = queuePath;
-            EnsureQueueExists();
+            throw new InvalidOperationException($"Failed to send order {order.OrderId} to queue", ex);
         }
+    }
 
-        private void EnsureQueueExists()
+    public async Task<Order?> ReceiveOrderAsync(TimeSpan timeout)
+    {
+        ServiceBusReceiver? receiver = null;
+        try
         {
-            try
-            {
-                if (!MessageQueue.Exists(_queuePath))
-                {
-                    MessageQueue.Create(_queuePath);
-                }
-            }
-            catch (Exception ex)
-            {
-                throw new InvalidOperationException($"Failed to create or access message queue at {_queuePath}", ex);
-            }
-        }
-
-        public void SendOrder(Order order)
-        {
-            try
-            {
-                using (MessageQueue queue = new MessageQueue(_queuePath))
-                {
-                    queue.Formatter = new XmlMessageFormatter(new Type[] { typeof(Order) });
-                    
-                    Message message = new Message(order)
-                    {
-                        Label = $"Order {order.OrderId}",
-                        Recoverable = true
-                    };
-
-                    queue.Send(message);
-                }
-            }
-            catch (Exception ex)
-            {
-                throw new InvalidOperationException($"Failed to send order {order.OrderId} to queue", ex);
-            }
-        }
-
-        public Order ReceiveOrder(TimeSpan timeout)
-        {
-            try
-            {
-                using (MessageQueue queue = new MessageQueue(_queuePath))
-                {
-                    queue.Formatter = new XmlMessageFormatter(new Type[] { typeof(Order) });
-                    
-                    Message message = queue.Receive(timeout);
-                    return (Order)message.Body;
-                }
-            }
-            catch (MessageQueueException ex) when (ex.MessageQueueErrorCode == MessageQueueErrorCode.IOTimeout)
+            receiver = _client.CreateReceiver(_queueName);
+            var message = await receiver.ReceiveMessageAsync(timeout);
+            
+            if (message == null)
             {
                 return null;
             }
-            catch (Exception ex)
-            {
-                throw new InvalidOperationException("Failed to receive order from queue", ex);
-            }
-        }
 
-        public int GetQueueMessageCount()
+            var json = message.Body.ToString();
+            var order = JsonSerializer.Deserialize<Order>(json);
+            
+            await receiver.CompleteMessageAsync(message);
+            
+            return order;
+        }
+        catch (Exception ex)
         {
-            try
+            throw new InvalidOperationException("Failed to receive order from queue", ex);
+        }
+        finally
+        {
+            if (receiver != null)
             {
-                using (MessageQueue queue = new MessageQueue(_queuePath))
-                {
-                    return queue.GetAllMessages().Length;
-                }
-            }
-            catch (Exception)
-            {
-                return 0;
+                await receiver.DisposeAsync();
             }
         }
     }
