@@ -1,9 +1,14 @@
+using ProductServiceLibrary;
+
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
+
+// Register ProductRepository as a singleton since it uses static data
+builder.Services.AddSingleton<ProductRepository>();
 
 // Add CORS policy to allow the MVC app to call the API
 builder.Services.AddCors(options =>
