@@ -1,49 +1,50 @@
-﻿using ProductCatalog.Models;
-using ProductCatalog.ProductServiceReference;
+﻿using Microsoft.AspNetCore.Mvc;
+using ProductCatalog.Models;
 using ProductCatalog.Services;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Web.Mvc;
 
 namespace ProductCatalog.Controllers
 {
     public class HomeController : Controller
     {
-        public ActionResult Index()
+        private readonly ProductApiService _productService;
+        private readonly OrderQueueService _queueService;
+        private readonly ILogger<HomeController> _logger;
+
+        public HomeController(ProductApiService productService, OrderQueueService queueService, ILogger<HomeController> logger)
+        {
+            _productService = productService;
+            _queueService = queueService;
+            _logger = logger;
+        }
+
+        public async Task<IActionResult> Index()
         {
             List<Product> products = new List<Product>();
 
             try
             {
-                using (var client = new ProductServiceClient())
-                {
-                    products = client.GetAllProducts().ToList();
-                }
+                products = await _productService.GetAllProductsAsync();
             }
             catch (Exception ex)
             {
                 ViewBag.ErrorMessage = "Unable to retrieve products: " + ex.Message;
+                _logger.LogError(ex, "Error retrieving products");
             }
 
             return View(products);
         }
 
         [HttpPost]
-        public ActionResult AddToCart(int productId, int quantity = 1)
+        public async Task<IActionResult> AddToCart(int productId, int quantity = 1)
         {
             try
             {
-                Product product = null;
-                using (var client = new ProductServiceClient())
-                {
-                    product = client.GetProductById(productId);
-                }
+                var product = await _productService.GetProductByIdAsync(productId);
 
                 if (product != null)
                 {
-                    var cart = Session["Cart"] as List<CartItem> ?? new List<CartItem>();
-                    var existingItem = cart.FirstOrDefault(c => c.Product.Id == productId);
+                    var cart = HttpContext.Session.Get<List<CartItem>>("Cart") ?? new List<CartItem>();
+                    var existingItem = cart.FirstOrDefault(c => c.Product != null && c.Product.Id == productId);
 
                     if (existingItem != null)
                     {
@@ -58,7 +59,7 @@ namespace ProductCatalog.Controllers
                         });
                     }
 
-                    Session["Cart"] = cart;
+                    HttpContext.Session.Set("Cart", cart);
                     TempData["SuccessMessage"] = product.Name + " has been added to your cart!";
                 }
                 else
@@ -69,37 +70,38 @@ namespace ProductCatalog.Controllers
             catch (Exception ex)
             {
                 TempData["ErrorMessage"] = "Error adding product to cart: " + ex.Message;
+                _logger.LogError(ex, "Error adding product to cart");
             }
 
             return RedirectToAction("Index");
         }
 
-        public ActionResult Cart()
+        public IActionResult Cart()
         {
-            var cart = Session["Cart"] as List<CartItem> ?? new List<CartItem>();
+            var cart = HttpContext.Session.Get<List<CartItem>>("Cart") ?? new List<CartItem>();
             return View(cart);
         }
 
         [HttpPost]
-        public ActionResult UpdateQuantity(int productId, int quantity)
+        public IActionResult UpdateQuantity(int productId, int quantity)
         {
             try
             {
-                var cart = Session["Cart"] as List<CartItem> ?? new List<CartItem>();
-                var item = cart.FirstOrDefault(c => c.Product.Id == productId);
+                var cart = HttpContext.Session.Get<List<CartItem>>("Cart") ?? new List<CartItem>();
+                var item = cart.FirstOrDefault(c => c.Product != null && c.Product.Id == productId);
 
                 if (item != null)
                 {
                     if (quantity > 0)
                     {
-                        if (quantity <= item.Product.StockQuantity)
+                        if (item.Product != null && quantity <= item.Product.StockQuantity)
                         {
                             item.Quantity = quantity;
                             TempData["SuccessMessage"] = "Quantity updated successfully.";
                         }
                         else
                         {
-                            TempData["ErrorMessage"] = "Requested quantity exceeds available stock (" + item.Product.StockQuantity + " available).";
+                            TempData["ErrorMessage"] = "Requested quantity exceeds available stock (" + item.Product?.StockQuantity + " available).";
                         }
                     }
                     else
@@ -108,54 +110,56 @@ namespace ProductCatalog.Controllers
                         TempData["SuccessMessage"] = "Item removed from cart.";
                     }
 
-                    Session["Cart"] = cart;
+                    HttpContext.Session.Set("Cart", cart);
                 }
             }
             catch (Exception ex)
             {
                 TempData["ErrorMessage"] = "Error updating quantity: " + ex.Message;
+                _logger.LogError(ex, "Error updating quantity");
             }
 
             return RedirectToAction("Cart");
         }
 
         [HttpPost]
-        public ActionResult RemoveFromCart(int productId)
+        public IActionResult RemoveFromCart(int productId)
         {
             try
             {
-                var cart = Session["Cart"] as List<CartItem> ?? new List<CartItem>();
-                var item = cart.FirstOrDefault(c => c.Product.Id == productId);
+                var cart = HttpContext.Session.Get<List<CartItem>>("Cart") ?? new List<CartItem>();
+                var item = cart.FirstOrDefault(c => c.Product != null && c.Product.Id == productId);
 
                 if (item != null)
                 {
                     cart.Remove(item);
-                    Session["Cart"] = cart;
-                    TempData["SuccessMessage"] = item.Product.Name + " has been removed from your cart.";
+                    HttpContext.Session.Set("Cart", cart);
+                    TempData["SuccessMessage"] = item.Product?.Name + " has been removed from your cart.";
                 }
             }
             catch (Exception ex)
             {
                 TempData["ErrorMessage"] = "Error removing item from cart: " + ex.Message;
+                _logger.LogError(ex, "Error removing item from cart");
             }
 
             return RedirectToAction("Cart");
         }
 
         [HttpPost]
-        public ActionResult ClearCart()
+        public IActionResult ClearCart()
         {
-            Session["Cart"] = new List<CartItem>();
+            HttpContext.Session.Set("Cart", new List<CartItem>());
             TempData["SuccessMessage"] = "Your cart has been cleared.";
             return RedirectToAction("Cart");
         }
 
         [HttpPost]
-        public ActionResult SubmitOrder()
+        public IActionResult SubmitOrder()
         {
             try
             {
-                var cart = Session["Cart"] as List<CartItem> ?? new List<CartItem>();
+                var cart = HttpContext.Session.Get<List<CartItem>>("Cart") ?? new List<CartItem>();
 
                 if (cart == null || !cart.Any())
                 {
@@ -163,44 +167,40 @@ namespace ProductCatalog.Controllers
                     return RedirectToAction("Cart");
                 }
 
-                // Calculate order totals
                 var subtotal = cart.Sum(item => item.Subtotal);
-                var tax = subtotal * 0.08m; // 8% tax
-                var shipping = subtotal > 50 ? 0 : 5.99m; // Free shipping over $50
+                var tax = subtotal * 0.08m;
+                var shipping = subtotal > 50 ? 0 : 5.99m;
                 var total = subtotal + tax + shipping;
 
-                // Create order
                 var order = new Order
                 {
-                    CustomerSessionId = Session.SessionID,
+                    CustomerSessionId = HttpContext.Session.Id,
                     Subtotal = subtotal,
                     Tax = tax,
                     Shipping = shipping,
                     Total = total
                 };
 
-                // Add order items
                 foreach (var cartItem in cart)
                 {
-                    order.Items.Add(new OrderItem
+                    if (cartItem.Product != null)
                     {
-                        ProductId = cartItem.Product.Id,
-                        ProductName = cartItem.Product.Name,
-                        SKU = cartItem.Product.SKU,
-                        Price = cartItem.Product.Price,
-                        Quantity = cartItem.Quantity,
-                        Subtotal = cartItem.Subtotal
-                    });
+                        order.Items.Add(new OrderItem
+                        {
+                            ProductId = cartItem.Product.Id,
+                            ProductName = cartItem.Product.Name,
+                            SKU = cartItem.Product.SKU,
+                            Price = cartItem.Product.Price,
+                            Quantity = cartItem.Quantity,
+                            Subtotal = cartItem.Subtotal
+                        });
+                    }
                 }
 
-                // Send order to MSMQ
-                var queueService = new OrderQueueService();
-                queueService.SendOrder(order);
+                _queueService.SendOrder(order);
 
-                // Clear the cart
-                Session["Cart"] = new List<CartItem>();
+                HttpContext.Session.Set("Cart", new List<CartItem>());
 
-                // Redirect to confirmation page
                 TempData["SuccessMessage"] = $"Order {order.OrderId} has been submitted successfully! Total: ${total:N2}";
                 TempData["OrderId"] = order.OrderId;
                 
@@ -209,11 +209,12 @@ namespace ProductCatalog.Controllers
             catch (Exception ex)
             {
                 TempData["ErrorMessage"] = "Error submitting order: " + ex.Message;
+                _logger.LogError(ex, "Error submitting order");
                 return RedirectToAction("Cart");
             }
         }
 
-        public ActionResult OrderConfirmation()
+        public IActionResult OrderConfirmation()
         {
             if (TempData["OrderId"] == null)
             {
@@ -223,17 +224,15 @@ namespace ProductCatalog.Controllers
             return View();
         }
 
-        public ActionResult About()
+        public IActionResult About()
         {
             ViewBag.Message = "Your application description page.";
-
             return View();
         }
 
-        public ActionResult Contact()
+        public IActionResult Contact()
         {
             ViewBag.Message = "Your contact page.";
-
             return View();
         }
     }

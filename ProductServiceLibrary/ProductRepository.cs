@@ -6,8 +6,8 @@ namespace ProductServiceLibrary
 {
     public class ProductRepository
     {
-        private static List<Product> _products;
-        private static List<Category> _categories;
+        private static List<Product> _products = new List<Product>();
+        private static List<Category> _categories = new List<Category>();
         private static int _nextProductId;
         private static readonly object _lock = new object();
 
@@ -352,7 +352,7 @@ namespace ProductServiceLibrary
             }
         }
 
-        public Product GetProductById(int productId)
+        public Product? GetProductById(int productId)
         {
             lock (_lock)
             {

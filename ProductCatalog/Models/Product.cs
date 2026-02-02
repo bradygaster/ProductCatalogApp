@@ -1,4 +1,4 @@
-﻿namespace ProductServiceLibrary
+namespace ProductCatalog.Models
 {
     public class Product
     {

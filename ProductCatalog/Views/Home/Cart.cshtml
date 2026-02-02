@@ -1,7 +1,7 @@
 @model List<ProductCatalog.Models.CartItem>
 
 @{
-    ViewBag.Title = "Shopping Cart";
+    ViewData["Title"] = "Shopping Cart";
 }
 
 <style>
@@ -113,7 +113,7 @@
             <h1 class="display-4">Shopping Cart</h1>
             <nav aria-label="breadcrumb">
                 <ol class="breadcrumb">
-                    <li class="breadcrumb-item">@Html.ActionLink("Home", "Index", "Home")</li>
+                    <li class="breadcrumb-item"><a asp-controller="Home" asp-action="Index">Home</a></li>
                     <li class="breadcrumb-item active" aria-current="page">Cart</li>
                 </ol>
             </nav>
@@ -157,60 +157,62 @@
                                 <tr>
                                     <td>
                                         <div class="product-info">
-                                            @if (!string.IsNullOrEmpty(item.Product.ImageUrl))
+                                            @if (item.Product != null)
                                             {
-                                                <img src="@item.Product.ImageUrl" alt="@item.Product.Name" class="product-image-small"
-                                                     onerror="this.style.display='none';" />
-                                            }
-                                            else
-                                            {
-                                                <div style="width: 80px; height: 80px; background-color: #f8f9fa; display: flex; align-items: center; justify-content: center; border-radius: 4px;">
-                                                    <span style="font-size: 10px; color: #6c757d;">No Image</span>
+                                                @if (!string.IsNullOrEmpty(item.Product.ImageUrl))
+                                                {
+                                                    <img src="@item.Product.ImageUrl" alt="@item.Product.Name" class="product-image-small"
+                                                         onerror="this.style.display='none';" />
+                                                }
+                                                else
+                                                {
+                                                    <div style="width: 80px; height: 80px; background-color: #f8f9fa; display: flex; align-items: center; justify-content: center; border-radius: 4px;">
+                                                        <span style="font-size: 10px; color: #6c757d;">No Image</span>
+                                                    </div>
+                                                }
+                                                <div>
+                                                    <strong>@item.Product.Name</strong><br />
+                                                    <small class="text-muted">@item.Product.Category</small><br />
+                                                    <small class="text-muted">SKU: @item.Product.SKU</small>
                                                 </div>
                                             }
-                                            <div>
-                                                <strong>@item.Product.Name</strong><br />
-                                                <small class="text-muted">@item.Product.Category</small><br />
-                                                <small class="text-muted">SKU: @item.Product.SKU</small>
-                                            </div>
                                         </div>
                                     </td>
                                     <td class="align-middle">
-                                        <strong>$@item.Product.Price.ToString("N2")</strong>
+                                        <strong>$@item.Product?.Price.ToString("N2")</strong>
                                     </td>
                                     <td class="align-middle">
                                         <div class="quantity-control">
                                             <form action="@Url.Action("UpdateQuantity", "Home")" method="post" style="display: inline;">
-                                                <input type="hidden" name="productId" value="@item.Product.Id" />
+                                                <input type="hidden" name="productId" value="@item.Product?.Id" />
                                                 <input type="hidden" name="quantity" value="@(item.Quantity - 1)" />
                                                 <button type="submit" class="btn btn-sm btn-outline-secondary btn-quantity" @(item.Quantity <= 1 ? "disabled" : "")>
                                                     <strong>-</strong>
                                                 </button>
                                             </form>
-                                            <input type="number" value="@item.Quantity" min="1" max="@item.Product.StockQuantity"
+                                            <input type="number" value="@item.Quantity" min="1" max="@item.Product?.StockQuantity"
                                                    class="form-control quantity-input" readonly />
                                             <form action="@Url.Action("UpdateQuantity", "Home")" method="post" style="display: inline;">
-                                                <input type="hidden" name="productId" value="@item.Product.Id" />
+                                                <input type="hidden" name="productId" value="@item.Product?.Id" />
                                                 <input type="hidden" name="quantity" value="@(item.Quantity + 1)" />
                                                 <button type="submit" class="btn btn-sm btn-outline-secondary btn-quantity"
-                                                        @(item.Quantity >= item.Product.StockQuantity ? "disabled" : "")>
+                                                        @(item.Product != null && item.Quantity >= item.Product.StockQuantity ? "disabled" : "")>
                                                     <strong>+</strong>
                                                 </button>
                                             </form>
                                         </div>
-                                        <small class="text-muted d-block mt-1 text-center">Max: @item.Product.StockQuantity</small>
+                                        <small class="text-muted d-block mt-1 text-center">Max: @item.Product?.StockQuantity</small>
                                     </td>
                                     <td class="align-middle">
                                         <strong class="text-success">$@item.Subtotal.ToString("N2")</strong>
                                     </td>
                                     <td class="align-middle">
-                                        @using (Html.BeginForm("RemoveFromCart", "Home", FormMethod.Post))
-                                        {
-                                            <input type="hidden" name="productId" value="@item.Product.Id" />
+                                        <form asp-controller="Home" asp-action="RemoveFromCart" method="post">
+                                            <input type="hidden" name="productId" value="@item.Product!.Id" />
                                             <button type="submit" class="btn btn-sm btn-danger" onclick="return confirm('Are you sure you want to remove this item?');">
                                                 <i class="bi bi-trash"></i> Remove
                                             </button>
-                                        }
+                                        </form>
                                     </td>
                                 </tr>
                             }
@@ -219,13 +221,12 @@
                 </div>
 
                 <div class="mt-3">
-                    @using (Html.BeginForm("ClearCart", "Home", FormMethod.Post, new { @class = "d-inline" }))
-                    {
+                    <form asp-controller="Home" asp-action="ClearCart" method="post" class="d-inline">
                         <button type="submit" class="btn btn-outline-danger" onclick="return confirm('Are you sure you want to clear your entire cart?');">
                             <i class="bi bi-trash"></i> Clear Cart
                         </button>
-                    }
-                    @Html.ActionLink("Continue Shopping", "Index", "Home", null, new { @class = "btn btn-outline-primary" })
+                    </form>
+                    <a asp-controller="Home" asp-action="Index" class="btn btn-outline-primary">Continue Shopping</a>
                 </div>
             </div>
 
@@ -277,12 +278,11 @@
                     </div>
 
                     <div class="d-grid gap-2 mt-4">
-                        @using (Html.BeginForm("SubmitOrder", "Home", FormMethod.Post))
-                        {
-                            <button type="submit" class="btn btn-success btn-lg">
+                        <form asp-controller="Home" asp-action="SubmitOrder" method="post">
+                            <button type="submit" class="btn btn-success btn-lg w-100">
                                 <i class="bi bi-credit-card"></i> Proceed to Checkout
                             </button>
-                        }
+                        </form>
                     </div>
 
                     <div class="mt-3 text-center">
@@ -306,7 +306,7 @@
                     <h2>Your cart is empty</h2>
                     <p class="lead text-muted">Looks like you haven't added any items to your cart yet.</p>
                     <div class="mt-4">
-                        @Html.ActionLink("Start Shopping", "Index", "Home", null, new { @class = "btn btn-primary btn-lg" })
+                        <a asp-controller="Home" asp-action="Index" class="btn btn-primary btn-lg">Start Shopping</a>
                     </div>
                 </div>
             </div>

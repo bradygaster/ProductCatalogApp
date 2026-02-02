@@ -1,7 +1,5 @@
 using ProductCatalog.Models;
-using System;
-using System.Configuration;
-using System.Messaging;
+using Newtonsoft.Json;
 
 namespace ProductCatalog.Services
 {
@@ -9,9 +7,10 @@ namespace ProductCatalog.Services
     {
         private readonly string _queuePath;
 
-        public OrderQueueService()
+        public OrderQueueService(IConfiguration configuration)
         {
-            _queuePath = ConfigurationManager.AppSettings["OrderQueuePath"] ?? @".\Private$\ProductCatalogOrders";
+            var queuePath = configuration["OrderQueuePath"];
+            _queuePath = string.IsNullOrEmpty(queuePath) ? Path.Combine(Path.GetTempPath(), "ProductCatalogOrders") : queuePath;
             EnsureQueueExists();
         }
 
@@ -25,14 +24,14 @@ namespace ProductCatalog.Services
         {
             try
             {
-                if (!MessageQueue.Exists(_queuePath))
+                if (!Directory.Exists(_queuePath))
                 {
-                    MessageQueue.Create(_queuePath);
+                    Directory.CreateDirectory(_queuePath);
                 }
             }
             catch (Exception ex)
             {
-                throw new InvalidOperationException($"Failed to create or access message queue at {_queuePath}", ex);
+                throw new InvalidOperationException($"Failed to create or access order queue directory at {_queuePath}", ex);
             }
         }
 
@@ -40,18 +39,9 @@ namespace ProductCatalog.Services
         {
             try
             {
-                using (MessageQueue queue = new MessageQueue(_queuePath))
-                {
-                    queue.Formatter = new XmlMessageFormatter(new Type[] { typeof(Order) });
-                    
-                    Message message = new Message(order)
-                    {
-                        Label = $"Order {order.OrderId}",
-                        Recoverable = true
-                    };
-
-                    queue.Send(message);
-                }
+                var fileName = Path.Combine(_queuePath, $"Order_{order.OrderId}_{DateTime.Now:yyyyMMddHHmmss}.json");
+                var json = JsonConvert.SerializeObject(order, Formatting.Indented);
+                File.WriteAllText(fileName, json);
             }
             catch (Exception ex)
             {
@@ -59,21 +49,21 @@ namespace ProductCatalog.Services
             }
         }
 
-        public Order ReceiveOrder(TimeSpan timeout)
+        public Order? ReceiveOrder()
         {
             try
             {
-                using (MessageQueue queue = new MessageQueue(_queuePath))
+                var files = Directory.GetFiles(_queuePath, "Order_*.json").OrderBy(f => f).ToArray();
+                if (files.Length == 0)
                 {
-                    queue.Formatter = new XmlMessageFormatter(new Type[] { typeof(Order) });
-                    
-                    Message message = queue.Receive(timeout);
-                    return (Order)message.Body;
+                    return null;
                 }
-            }
-            catch (MessageQueueException ex) when (ex.MessageQueueErrorCode == MessageQueueErrorCode.IOTimeout)
-            {
-                return null;
+
+                var fileName = files[0];
+                var json = File.ReadAllText(fileName);
+                var order = JsonConvert.DeserializeObject<Order>(json);
+                File.Delete(fileName);
+                return order;
             }
             catch (Exception ex)
             {
@@ -85,10 +75,7 @@ namespace ProductCatalog.Services
         {
             try
             {
-                using (MessageQueue queue = new MessageQueue(_queuePath))
-                {
-                    return queue.GetAllMessages().Length;
-                }
+                return Directory.GetFiles(_queuePath, "Order_*.json").Length;
             }
             catch (Exception)
             {
